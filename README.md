@@ -22,6 +22,8 @@ https://github.com/user-attachments/assets/6f44cf84-e485-4c26-8703-481e0c9c2c54
 
 ## Generative UI
 
+![Generative UI spectrum: Controlled → Declarative → Open-ended](apps/frontend/public/generative-ui-spectrum.jpg)
+
 "Generative UI" describes any AI-driven interface that the agent **chooses, composes, or writes at runtime**. Approaches sit on a spectrum — from **more control** on one end to **more flexibility** on the other — and most real apps mix several tiers.
 
 ### Controlled (`useComponent`, `json-render`)
