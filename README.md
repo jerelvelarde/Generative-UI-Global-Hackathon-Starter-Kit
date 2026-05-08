@@ -2,7 +2,13 @@
 
 ![Hackathon Banner](apps/frontend/public/banner.jpg)
 
-A complete AI agent starter wired for a **Notion lead-capture / CRM-lite** usecase: durable conversation threads, an agent-driven canvas of lead cards, bidirectional sync with a Notion "Leads" database, and a deployable MCP App — all in one repo.
+Welcome to the **Generative UI Global Hackathon: Agentic Interfaces**! This starter kit gives you a complete AI-powered application with durable conversation threads, an agent-driven canvas, real-world MCP integrations, and a deployable MCP App — wired up with CopilotKit, LangChain Deep Agents, Gemini, A2UI, Notion MCP (via mcp-use), Manufact, and Daytona.
+
+## About this starter
+
+This is a starter template for building agentic interfaces using CopilotKit, LangChain Deep Agents, Gemini, and A2UI. It provides a modern Next.js application with an integrated LangGraph Deep Agent that manages a visual canvas of interactive cards with real-time AI synchronization and external tool integrations (a Notion "Leads" database, for this example) through MCP. A second deployable MCP server, built on mcp-use, gives the agent a third surface that runs natively in Claude or ChatGPT.
+
+This is an example application that we built to help you get started quickly. Everything you see can be customized, replaced, augmented, or built upon.
 
 https://github.com/user-attachments/assets/6f44cf84-e485-4c26-8703-481e0c9c2c54
 
@@ -11,6 +17,33 @@ https://github.com/user-attachments/assets/6f44cf84-e485-4c26-8703-481e0c9c2c54
 - **Real integrations via MCP.** Notion Leads database sync out of the box; swap to any other MCP server with one config edit.
 - **Deployable MCP server.** A third agent surface that runs in Claude or ChatGPT, deployable with one command.
 - **Generative UI primed.** Stream Gemini-rendered components without re-plumbing.
+
+---
+
+## Generative UI
+
+![Generative UI spectrum: Controlled → Declarative → Open-ended](apps/frontend/public/generative-ui-spectrum.jpg)
+
+"Generative UI" describes any AI-driven interface that the agent **chooses, composes, or writes at runtime**. Approaches sit on a spectrum — from **more control** on one end to **more flexibility** on the other — and most real apps mix several tiers.
+
+### Controlled (`useComponent`, `json-render`)
+
+The highest level of control. The developer provides the agent with a set of predefined React components, and the agent selects the appropriate one and populates it with props. This ensures the interface stays on-brand and pixel-perfect, making it ideal for standard, repeatable application workflows.
+
+### Declarative (`A2UI`, `Hashbrown`)
+
+Utilizing the [A2UI](https://a2ui.org/) specification, this method uses a schema to map agent outputs to a catalog of renderers. It offers a balance between control and flexibility, allowing the agent to handle more varied UI layouts without requiring a unique tool for every single component. It is particularly effective for the "long tail" of user interactions.
+
+### Open-ended (`MCP Apps`, `openGenerativeUI`)
+
+The "Wild West" of generative UI — the agent generates raw HTML that is rendered within a secure, sandboxed double-iframe. While it is the most flexible — enabling the creation of disposable, data-grounded interfaces on the fly — it is the hardest to style consistently and can behave unpredictably. See [opengenerativeui.copilotkit.ai](https://opengenerativeui.copilotkit.ai/) for a live demo.
+
+This kit is wired for all three: the canvas surface uses controlled cards for lead entities, A2UI streams declarative components from Gemini, and the deployable MCP server in `apps/mcp/` extends the same agent into Claude and ChatGPT's open-ended generative UI surface.
+
+**Go deeper:**
+
+- 🎥 Talk — [The Generative UI spectrum](https://www.youtube.com/watch?v=y4lln0yGMSE)
+- 📝 Article — [CopilotKit on Generative UI](https://x.com/CopilotKit/status/2047327612163293286)
 
 ---
 
@@ -72,13 +105,56 @@ Please give us feedback on your experience with it!
 
 ---
 
+## Vibe coding
+
+The kit ships with skills pre-installed for Cursor, Claude Code, and any agent reading `.agent/`. Open the project in your coding tool and they're picked up automatically — no extra setup. They teach your coding agent CopilotKit's v2 API surface, MCP server / MCP App authoring patterns, and this kit's own conventions.
+
+```
+.
+├── .agent/skills/   ← agent-tool-agnostic (read by any agent following the AGENTS.md convention)
+├── .claude/skills/  ← Claude Code
+└── .cursor/skills/  ← Cursor
+```
+
+Each directory carries the same set of 11 skills:
+
+- **CopilotKit (8):** `copilotkit-{setup, develop, integrations, debug, upgrade, contribute, agui, self-update}` — from [CopilotKit/skills](https://github.com/CopilotKit/skills).
+- **MCP (3):** `mcp-builder`, `mcp-apps-builder`, `chatgpt-app-builder` — from the Manufact reference. They cover authoring an MCP server (the open protocol Anthropic publishes for wiring LLMs to external tools — the same protocol the kit's Notion integration uses) and packaging it as an MCP App that runs natively in Claude or ChatGPT.
+
+To **update** the CopilotKit skills to the latest upstream:
+
+```bash
+npx skills add copilotkit/skills --full-depth -y
+```
+
+### Connect to the CopilotKit docs MCP server
+
+CopilotKit also exposes a hosted MCP server that gives your coding agent live access to the latest CopilotKit reference material — handy when the checked-in skills lag upstream or you want to ask the docs questions interactively.
+
+**MCP endpoint:** `https://mcp.copilotkit.ai/mcp`
+
+**Claude Web** (Anthropic's web app — attaches MCP servers via Connectors):
+
+1. Open [Claude](https://claude.ai/), click your user in the bottom-left of the chat box, and select **Settings**.
+2. In the left-hand menu, select **Connectors** (or jump straight to the [Connectors settings page](https://claude.ai/settings/connectors)).
+3. Click **Add custom connector**.
+4. **Name:** `CopilotKit`
+5. **URL:** `https://mcp.copilotkit.ai/mcp`
+6. Click **Add**.
+
+Setup for Claude Code, Cursor, ChatGPT, and other coding agents is documented at [docs.copilotkit.ai/coding-agents](https://docs.copilotkit.ai/coding-agents).
+
+Reference docs: [CopilotKit Coding Agents](https://docs.copilotkit.ai/coding-agents) · [CopilotKit Skills repo](https://github.com/CopilotKit/skills) · [Agent Skills standard](https://agentskills.io).
+
+---
+
 ## Documentation
 
 Deeper guides live in [`dev-docs/`](dev-docs/):
 
 - [Setup](dev-docs/setup.md) · [Model switching](dev-docs/model-switching.md) · [MCP server](dev-docs/mcp-server.md)
 - [Architecture](dev-docs/architecture.md) · [Customization](dev-docs/customization.md) · [Threads / Intelligence](dev-docs/threads.md)
-- [Vibe coding](dev-docs/vibe-coding.md) · [Scripts](dev-docs/scripts.md) · [Demo prompts](dev-docs/demo-prompts.md) · [Troubleshooting](dev-docs/troubleshooting.md)
+- [Scripts](dev-docs/scripts.md) · [Demo prompts](dev-docs/demo-prompts.md) · [Troubleshooting](dev-docs/troubleshooting.md)
 
 ## License
 

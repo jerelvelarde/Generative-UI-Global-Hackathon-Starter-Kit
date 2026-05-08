@@ -13,7 +13,6 @@ Deeper guides for the kit. Start with the root [README](../README.md) for the pr
 - [Architecture](architecture.md) — diagrams + why a separate BFF
 - [Customization](customization.md) — add card types, swap MCP servers, add tools
 - [Threads / Intelligence](threads.md) — durable thread walkthrough
-- [Vibe coding](vibe-coding.md) — agent skills shipped with the kit
 - [Available scripts](scripts.md) — `npm run` cheat sheet
 - [Demo prompts](demo-prompts.md) — try each layer
 - [Troubleshooting](troubleshooting.md) — known failure modes + fixes
