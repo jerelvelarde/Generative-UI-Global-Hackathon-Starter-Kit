@@ -14,7 +14,9 @@ A complete AI agent starter wired for a **Notion lead-capture / CRM-lite** useca
 - **An agent-driven canvas.** Lead cards (entities), follow-up notes, and pipeline charts the AI can create, edit, and organize while you watch.
 - **Real integrations via MCP.** Notion Leads database sync out of the box through the official Notion MCP server (mcp-use); swap to any other MCP server with one config edit.
 - **A Manufact MCP server.** A third agent surface that runs in Claude or ChatGPT, deployable with one command.
-- **Generative UI primed.** `openGenerativeUI` and `a2ui` are wired so you can stream Gemini-rendered components without re-plumbing.
+- **Generative UI primed.** Generative UI Components are wired so you can stream Gemini-rendered components without re-plumbing.
+
+https://github.com/user-attachments/assets/6f44cf84-e485-4c26-8703-481e0c9c2c54
 
 ### CopilotKit
 
