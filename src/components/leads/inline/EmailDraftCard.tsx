@@ -50,8 +50,16 @@ export interface EmailDraftCardProps {
   onToneChange?: (tone: EmailTone) => void;
   /** Trigger an unconditional regenerate of the whole draft. */
   onRegenerate?: () => void;
-  /** Send / queue from the card. Optional — usually queued through the modal. */
+  /** Queue from the card (legacy multi-lead approval flow via SendQueueModal). */
   onQueue?: () => void;
+  /**
+   * Send from the card — posts the email as a comment on the lead's Notion
+   * page (or to the local store when Notion isn't configured). Wired to
+   * `comment_on_lead` on the agent. When provided, this is the primary
+   * action shown in the compact footer; `onQueue` becomes a secondary
+   * action only when Send is unwired.
+   */
+  onSend?: () => void;
   /** Local edits in expanded mode propagate up. */
   onSubjectChange?: (next: string) => void;
   onBodyChange?: (next: string) => void;
@@ -65,6 +73,7 @@ export function EmailDraftCard({
   onToneChange,
   onRegenerate,
   onQueue,
+  onSend,
   onSubjectChange,
   onBodyChange,
 }: EmailDraftCardProps) {
@@ -229,7 +238,17 @@ export function EmailDraftCard({
             Regenerate
           </button>
         ) : null}
-        {onQueue ? (
+        {onSend ? (
+          <button
+            type="button"
+            onClick={onSend}
+            title="Post this email as a comment on the lead's Notion page"
+            className="ml-auto inline-flex items-center gap-1 rounded-md border border-secondary/30 bg-secondary/10 px-2.5 py-1 text-[11px] font-medium text-secondary hover:bg-secondary/15"
+          >
+            <Send className="size-3" />
+            Send
+          </button>
+        ) : onQueue ? (
           <button
             type="button"
             onClick={onQueue}

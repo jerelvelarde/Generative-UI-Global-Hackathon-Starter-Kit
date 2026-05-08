@@ -311,9 +311,18 @@ function LiveEmailDraft({ args }: { args: LiveEmailDraftArgs }) {
           `Regenerate the outreach email for ${lead.name} (id ${lead.id}).`,
         )
       }
-      onQueue={() =>
+      onSend={() =>
         injectPrompt(
-          `Queue the email for ${lead.name} (id ${lead.id}) into the send queue.`,
+          // Include subject + body inline as JSON so the agent passes them
+          // through to comment_on_lead verbatim — same pattern the canvas
+          // uses for `Update lead <id> in Notion: { ... }`.
+          `Send the email to ${lead.name} (id ${lead.id}) by commenting ` +
+            `on their Notion page. Call comment_on_lead with: ` +
+            JSON.stringify({
+              lead_id: lead.id,
+              subject: args.draft!.subject,
+              body: args.draft!.body,
+            }),
         )
       }
     />

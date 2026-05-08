@@ -34,6 +34,7 @@ from dotenv import load_dotenv
 
 from .notion_mcp import (
     has_notion_token,
+    mcp_create_comment,
     mcp_create_page,
     mcp_fetch_data_source,
     mcp_fetch_database_schema,
@@ -506,6 +507,42 @@ def update_lead(
         return _row_from_props(page, props)
     # Fallback: Notion didn't echo the row back — apply the patch locally.
     return {"id": page_id, **(patch or {})}
+
+
+# Notion's rich_text blocks cap at 2000 chars each. Chunk long messages so
+# multi-paragraph email drafts don't get truncated by the API.
+_RICH_TEXT_CHUNK = 1900
+
+
+def _chunk_rich_text(body: str) -> List[Dict[str, Any]]:
+    """Split `body` into Notion rich_text blocks under the per-block cap."""
+    if not body:
+        return [{"type": "text", "text": {"content": ""}}]
+    chunks: List[Dict[str, Any]] = []
+    remaining = body
+    while remaining:
+        head, remaining = remaining[:_RICH_TEXT_CHUNK], remaining[_RICH_TEXT_CHUNK:]
+        chunks.append({"type": "text", "text": {"content": head}})
+    return chunks
+
+
+def add_lead_comment(page_id: str, body: str) -> Optional[Dict[str, Any]]:
+    """Post `body` as a comment on a Notion lead page.
+
+    Returns the Notion Comment payload on success, or `None` when the
+    integration is unconfigured / the page id is missing / the API
+    errors. Used by the "Send" button on the inline email-draft card.
+    """
+    if not has_notion_token():
+        return None
+    if not page_id:
+        print("add_lead_comment: page_id is required")
+        return None
+    try:
+        return mcp_create_comment(page_id, _chunk_rich_text(body or ""))
+    except Exception as e:  # noqa: BLE001 - surface to caller as None
+        print(f"add_lead_comment: mcp_create_comment raised: {e}")
+        return None
 
 
 def insert_lead(

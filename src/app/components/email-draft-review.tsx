@@ -8,7 +8,9 @@
  * The agent's `renderEmailDraft` frontend tool drops an `EmailDraftCard`
  * into the chat stream when the user says "draft / write / compose an
  * email to <name>". Tone is one of four; the card has Regenerate and
- * Queue actions that round-trip back to the agent via `injectPrompt`.
+ * Send actions that round-trip back to the agent via `injectPrompt`.
+ * Send posts the subject + body as a comment on the lead's Notion page
+ * (or to the local store when Notion isn't configured).
  *
  * The agent prompt for this surface lives in
  * `agent/src/prompts.py::GENERATIVE_UI_PROMPT` under the
@@ -90,6 +92,13 @@ export function EmailDraftReview() {
                 lead={DEMO_LEAD}
                 draft={variant}
                 variant="compact"
+                // Showcase wiring: Regenerate + Send mirror the live chat
+                // surface so the demo accurately reflects what the user
+                // sees when the agent renders this card. Both are no-ops
+                // here — the live wiring lives in LiveEmailDraft on the
+                // canvas page.
+                onRegenerate={() => undefined}
+                onSend={() => undefined}
               />
             </div>
           ))}
@@ -107,9 +116,9 @@ export function EmailDraftReview() {
   name: "renderEmailDraft",
   description:
     "Render a draft outreach email inline in chat. " +
-    "Use AFTER drafting, BEFORE queueing — the user opens it to edit. " +
-    "Side effects (queue, send) happen via the component's buttons, " +
-    "which call other tools. Do NOT call queueEmail in the same turn.",
+    "Use AFTER drafting, BEFORE sending — the user opens it to edit. " +
+    "Side effects (regenerate, send) happen via the component's buttons, " +
+    "which call other tools. Do NOT call comment_on_lead in the same turn.",
   parameters: z.object({
     leadId: z.string(),
     leadName: z.string().optional(),
@@ -131,15 +140,15 @@ export function EmailDraftReview() {
             <ReviewCodeBlock>{`- renderEmailDraft({leadId, draft: {subject, body, tone, rationale?}}):
   inline draft outreach email. Call this WHENEVER the user says
   "draft / write / compose / send an email to <name>" or asks for an
-  outreach message for a specific lead. Resolve <name> against
-  state.leads to get the leadId — match on full or partial name
-  (case-insensitive) and prefer the highest-confidence hit. Compose
-  subject + body yourself; pick \`tone\` from
+  outreach message for a specific lead. Resolve <name> by calling
+  find_lead(query='<name>') FIRST, then pass the returned id through as
+  leadId. Compose subject + body yourself; pick \`tone\` from
   'casual' | 'technical' | 'founder-to-founder' | 'conference-followup'
-  based on the lead's role / tools / company stage. Optionally include
-  a short \`rationale\` so the user sees why you chose that tone. The
-  card has Regenerate and Queue buttons that round-trip back to you —
-  do NOT queue or send in the same turn as renderEmailDraft.`}</ReviewCodeBlock>
+  based on the lead's role / tools / company stage. The card has
+  Regenerate and Send buttons that round-trip back to you — Send fires
+  comment_on_lead(lead_id, subject, body), which posts the email as a
+  comment on the lead's Notion page. Do NOT call comment_on_lead in the
+  same turn as renderEmailDraft.`}</ReviewCodeBlock>
           </ReviewLabel>
         </div>
       </ReviewSubsection>
@@ -174,7 +183,14 @@ export function EmailDraftReview() {
       draft={args.draft}
       variant="compact"
       onRegenerate={() => injectPrompt(\`Regenerate the outreach email for \${lead.name}\`)}
-      onQueue={() => injectPrompt(\`Queue the email for \${lead.name} into the send queue.\`)}
+      onSend={() => injectPrompt(
+        \`Send the email to \${lead.name} (id \${lead.id}) by commenting on \` +
+        \`their Notion page. Call comment_on_lead with: \${JSON.stringify({
+          lead_id: lead.id,
+          subject: args.draft.subject,
+          body: args.draft.body,
+        })}\`,
+      )}
     />
   );
 }`}</ReviewCodeBlock>

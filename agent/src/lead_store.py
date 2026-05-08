@@ -61,6 +61,11 @@ class LeadStore(Protocol):
     def insert_lead(self, lead: dict[str, Any]) -> Optional[dict[str, Any]]:
         """Create a new lead. Returns the new row (with id/url filled), or None on failure."""
 
+    def add_comment(
+        self, lead_id: str, body: str
+    ) -> Optional[dict[str, Any]]:
+        """Post a comment on the lead. Returns a `{ok: True, ...}` dict on success, None on failure."""
+
     def database_title(self) -> str:
         """Human label for the source — surfaces in the canvas's sync banner."""
 
@@ -94,6 +99,16 @@ class NotionStore:
         from .notion_integration import insert_lead
 
         return insert_lead(self.database_id, lead)
+
+    def add_comment(
+        self, lead_id: str, body: str
+    ) -> Optional[dict[str, Any]]:
+        from .notion_integration import add_lead_comment
+
+        result = add_lead_comment(lead_id, body)
+        if result is None:
+            return None
+        return {"ok": True, "comment_id": result.get("id", ""), "source": "notion"}
 
     def database_title(self) -> str:
         # Tries the live API first (handles renames cleanly), falls back to
@@ -231,6 +246,37 @@ class LocalJsonStore:
             rows.append(new_row)
             self._write_all(rows)
         return new_row
+
+    def add_comment(
+        self, lead_id: str, body: str
+    ) -> Optional[dict[str, Any]]:
+        """Append a comment to the lead row in the local JSON file.
+
+        The local store has no Notion to post to, so the "send" gesture
+        instead persists a comment record on the lead itself. This keeps
+        the demo flow working end-to-end without Notion configured.
+        """
+        if not lead_id:
+            return None
+        comment = {
+            "id": str(uuid.uuid4()),
+            "body": body or "",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        with _FILE_LOCK:
+            rows = self._read_all()
+            for i, row in enumerate(rows):
+                if row.get("id") == lead_id:
+                    existing = list(row.get("comments") or [])
+                    existing.append(comment)
+                    rows[i] = {**row, "comments": existing}
+                    self._write_all(rows)
+                    return {
+                        "ok": True,
+                        "comment_id": comment["id"],
+                        "source": "local",
+                    }
+        return None
 
     def database_title(self) -> str:
         return "Local: starter data"

@@ -260,6 +260,31 @@ def mcp_create_page(
     )
 
 
+def mcp_create_comment(
+    page_id: str, rich_text: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Post a comment on a Notion page via `API-create-a-comment`.
+
+    `rich_text` follows Notion's rich-text shape:
+      [{"type": "text", "text": {"content": "..."}}, ...]
+    Notion enforces a 2000-char cap per text block; the caller chunks
+    long bodies before passing them in.
+
+    Returns the new Comment object on success; raises on transport / 4xx.
+    Used by `notion_integration.add_lead_comment` to surface email drafts
+    on the lead's Notion page.
+    """
+    return _extract_payload(
+        _run_sync(_call_tool_async(
+            "API-create-a-comment",
+            {
+                "parent": {"page_id": page_id},
+                "rich_text": rich_text,
+            },
+        ))
+    )
+
+
 def has_notion_token() -> bool:
     """Sentinel for callers that want to short-circuit before spawning npx."""
     return _has_token()

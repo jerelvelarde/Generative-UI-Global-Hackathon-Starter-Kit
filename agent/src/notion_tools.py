@@ -517,6 +517,115 @@ def insert_notion_lead(
         )
 
 
+@tool
+def comment_on_lead(
+    lead_id: Annotated[str, "Notion page id of the lead to comment on."],
+    subject: Annotated[
+        str,
+        "Email subject. Rendered as the comment's first line (bold-prefixed).",
+    ],
+    body: Annotated[
+        str,
+        "Email body. Posted verbatim under the subject line. Multi-paragraph "
+        "input is preserved; chunked across blocks if it exceeds Notion's "
+        "2000-char per-block cap.",
+    ],
+    tool_call_id: Annotated[str, InjectedToolCallId] = "",
+    state: Annotated[Dict[str, Any], InjectedState] = None,
+) -> Command:
+    """Send the drafted outreach email by posting it as a comment on the lead's Notion page.
+
+    Wired to the "Send" button on `renderEmailDraft`'s inline card. The
+    comment lands on the Notion page identified by `lead_id` (or, when
+    Notion isn't configured, persists on the lead row in the local JSON
+    cache so the demo flow still completes end-to-end).
+
+    Returns a Command(update=) emitting a one-line confirmation:
+      "Sent email to <name> (commented on Notion page)."  on Notion success
+      "Sent email to <name> (saved to local store)."      on local success
+      "Send failed for lead <id>: <hint>"                  on failure
+    """
+    try:
+        from .lead_store import get_store
+
+        if not lead_id:
+            return Command(
+                update={
+                    "messages": [
+                        ToolMessage(
+                            content="Send failed: lead_id is required.",
+                            tool_call_id=tool_call_id,
+                        )
+                    ],
+                }
+            )
+
+        # Compose the comment text. Subject as a bold-prefix-style first line
+        # makes the comment readable at a glance in the Notion sidebar.
+        text = f"📨 {subject}".strip() if subject else "📨 (no subject)"
+        if body:
+            text = f"{text}\n\n{body}"
+
+        store = get_store()
+        result = store.add_comment(lead_id, text)
+        if result is None:
+            store_hint = (
+                "Local store write failed — check that agent/data is writable."
+                if store.is_local()
+                else (
+                    "Notion call errored. Check NOTION_TOKEN, that the "
+                    "database is shared with the integration, and that "
+                    "the lead_id is a real Notion page id."
+                )
+            )
+            return Command(
+                update={
+                    "messages": [
+                        ToolMessage(
+                            content=f"Send failed for lead {lead_id}: {store_hint}",
+                            tool_call_id=tool_call_id,
+                        )
+                    ],
+                }
+            )
+
+        # Resolve a friendly display name from canvas state so the agent's
+        # confirmation reads naturally.
+        leads_raw = (state or {}).get("leads") or []
+        display_name = "lead"
+        for l in leads_raw:
+            if isinstance(l, dict) and l.get("id") == lead_id:
+                display_name = l.get("name") or display_name
+                break
+
+        where = (
+            "saved to local store"
+            if (result.get("source") == "local")
+            else "commented on Notion page"
+        )
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(
+                        content=f"Sent email to {display_name} ({where}).",
+                        tool_call_id=tool_call_id,
+                    )
+                ],
+            }
+        )
+    except Exception as e:  # noqa: BLE001 - surface error text to the LLM
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(
+                        content=f"Send failed for lead {lead_id}: {e}",
+                        tool_call_id=tool_call_id,
+                    )
+                ],
+            }
+        )
+
+
 def load_notion_tools() -> List[Any]:
     """Return the Notion-flavored backend tool list for the agent.
 
@@ -527,6 +636,7 @@ def load_notion_tools() -> List[Any]:
     - `notion_health_check`
     - `update_notion_lead`        (phase 04 — Command(update=) write-back)
     - `insert_notion_lead`        (phase 04 — Command(update=) write-back)
+    - `comment_on_lead`           (email-draft Send button → Notion comment)
 
     The Notion MCP server is spawned per-call inside `notion_mcp.py`, so
     no setup happens here — the only env this function depends on is
@@ -539,6 +649,7 @@ def load_notion_tools() -> List[Any]:
         notion_health_check,
         update_notion_lead,
         insert_notion_lead,
+        comment_on_lead,
     ]
     print(f"Backend tools loaded: {len(tools)} tools")
     return tools
