@@ -1,6 +1,6 @@
 # Generative UI Global Hackathon: Agentic Interfaces Starter Kit
 
-![Hackathon Banner](public/banner.jpg)
+![Hackathon Banner](apps/frontend/public/banner.jpg)
 
 A complete AI agent starter wired for a **Notion lead-capture / CRM-lite** usecase: durable conversation threads, an agent-driven canvas of lead cards, bidirectional sync with a Notion "Leads" database, and a deployable MCP App — all in one repo.
 
