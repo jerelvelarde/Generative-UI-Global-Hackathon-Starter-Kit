@@ -19,6 +19,11 @@ redis-data
 # LangGraph dev runtime state (per-session checkpoint cache)
 agent/.langgraph_api/
 
+# mcp-use widget build artifacts (per-widget vite temp dirs); only the
+# generated tool-registry.d.ts is tracked.
+mcp/.mcp-use/*
+!mcp/.mcp-use/tool-registry.d.ts
+
 # Local lead-store cache (auto-created from agent/data/leads.seed.json on
 # first read when Notion isn't configured). Per-checkout, never committed.
 agent/data/leads.local.json
