@@ -3,10 +3,12 @@ import Link from "next/link";
 import {
   ArrowLeft,
   BookOpen,
+  Boxes,
   Code2,
   Cpu,
   Github,
   KeyRound,
+  Layers,
   Plug,
   Rocket,
   Server,
@@ -55,6 +57,13 @@ const pillars = [
       "Gemini 3.1 Flash-Lite is Google's high-volume workhorse — fast, cheap, and tool-calling-capable. Default for chat. Drop in an API key from Google AI Studio, restart, and you're done. Switch to Pro, OpenAI, Anthropic, or Ollama with a one-line edit.",
   },
   {
+    name: "A2UI",
+    icon: Layers,
+    href: "https://a2ui.org",
+    blurb:
+      "A protocol for agent-driven interfaces — lets agents generate rich, interactive UI that renders natively across web, mobile, and desktop without executing arbitrary code. Sandboxed-by-default; pairs naturally with Gemini-emitted generative UI. Browse the custom catalog at a2ui-composer.ag-ui.com for component examples.",
+  },
+  {
     name: "Notion MCP",
     icon: Plug,
     href: "https://github.com/makenotion/notion-mcp-server",
@@ -66,20 +75,27 @@ const pillars = [
     icon: Server,
     href: "https://mcp-use.com",
     blurb:
-      "A deployment platform for MCP servers built on the open-source mcp-use framework. The kit's mcp/ package is a single-file MCP server that gives the agent a third surface — runnable inside Claude or ChatGPT directly. One command tunnels publicly; one command deploys to Manufact Cloud.",
+      "A deployment platform for MCP servers built on the open-source mcp-use framework. The kit's apps/mcp/ package is a single-file MCP server that gives the agent a third surface — runnable inside Claude or ChatGPT directly. One command tunnels publicly; one command deploys to Manufact Cloud.",
+  },
+  {
+    name: "Daytona",
+    icon: Boxes,
+    href: "https://www.daytona.io",
+    blurb:
+      "Secure, elastic infrastructure runtime for AI-generated code execution and agent workflows. Sandboxes spin up in under 90ms with full isolation — dedicated kernel, filesystem, network, and allocated vCPU/RAM/disk — and run any Python, TypeScript, or JavaScript. A natural fit when an agent needs to execute generated code or persist a workspace across sessions.",
   },
 ];
 
 const quickstart = [
   {
     title: "Run the CLI",
-    body: "npx @copilotkit/cli-vnext@latest init",
-    note: "Select Intelligence when prompted. The early-access password is earlyaccess.",
+    body: "npx @copilotkit/cli@latest init",
+    note: "Select Intelligence when prompted.",
   },
   {
     title: "Add your Gemini key",
     body: "GEMINI_API_KEY=AIza...",
-    note: "Get a key at aistudio.google.com → Get API key. Drop it in BOTH .env and agent/.env (the agent reads its own dotenv).",
+    note: "Get a key at aistudio.google.com → Get API key. Drop it in BOTH .env and apps/agent/.env (the agent reads its own dotenv).",
   },
   {
     title: "Install + run",
@@ -147,6 +163,21 @@ const docs = [
     label: "Manufact / mcp-use",
     href: "https://mcp-use.com/docs/typescript/getting-started/quickstart",
   },
+  { label: "A2UI", href: "https://a2ui.org" },
+  { label: "Daytona", href: "https://github.com/daytonaio/daytona" },
+];
+
+const repoDocs = [
+  { label: "Setup", href: "https://github.com/jerelvelarde/Generative-UI-Global-Hackathon-Starter-Kit/blob/main/dev-docs/setup.md" },
+  { label: "Architecture", href: "https://github.com/jerelvelarde/Generative-UI-Global-Hackathon-Starter-Kit/blob/main/dev-docs/architecture.md" },
+  { label: "Customization", href: "https://github.com/jerelvelarde/Generative-UI-Global-Hackathon-Starter-Kit/blob/main/dev-docs/customization.md" },
+  { label: "Model switching", href: "https://github.com/jerelvelarde/Generative-UI-Global-Hackathon-Starter-Kit/blob/main/dev-docs/model-switching.md" },
+  { label: "MCP server", href: "https://github.com/jerelvelarde/Generative-UI-Global-Hackathon-Starter-Kit/blob/main/dev-docs/mcp-server.md" },
+  { label: "Threads / Intelligence", href: "https://github.com/jerelvelarde/Generative-UI-Global-Hackathon-Starter-Kit/blob/main/dev-docs/threads.md" },
+  { label: "Vibe coding", href: "https://github.com/jerelvelarde/Generative-UI-Global-Hackathon-Starter-Kit/blob/main/dev-docs/vibe-coding.md" },
+  { label: "Demo prompts", href: "https://github.com/jerelvelarde/Generative-UI-Global-Hackathon-Starter-Kit/blob/main/dev-docs/demo-prompts.md" },
+  { label: "Troubleshooting", href: "https://github.com/jerelvelarde/Generative-UI-Global-Hackathon-Starter-Kit/blob/main/dev-docs/troubleshooting.md" },
+  { label: "Scripts", href: "https://github.com/jerelvelarde/Generative-UI-Global-Hackathon-Starter-Kit/blob/main/dev-docs/scripts.md" },
 ];
 
 function Section({
@@ -231,7 +262,7 @@ export default function AboutPage() {
         id="about"
         eyebrow="What you get"
         title="About this Starter Kit"
-        subtitle="Five well-known pieces, wired together so a team of two can ship something credible in 24–48 hours."
+        subtitle="Seven well-known pieces, wired together so a team of two can ship something credible in 24–48 hours."
       >
         <ul className="grid gap-4 md:grid-cols-2">
           {pillars.map(({ name, icon: Icon, blurb, href }) => (
@@ -339,11 +370,12 @@ export default function AboutPage() {
             </div>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
               Extend <Code>CardType</Code> in{" "}
-              <Code>src/lib/canvas/types.ts</Code>, render its branch in{" "}
-              <Code>src/components/canvas/CardRenderer.tsx</Code>, then add
-              one mutation tool via <Code>useFrontendTool</Code> in{" "}
-              <Code>src/app/page.tsx</Code>. Tell the agent about it in{" "}
-              <Code>agent/src/prompts.py</Code>.
+              <Code>apps/frontend/src/lib/canvas/types.ts</Code>, render its
+              branch in{" "}
+              <Code>apps/frontend/src/components/canvas/CardRenderer.tsx</Code>,
+              then add one mutation tool via <Code>useFrontendTool</Code> in{" "}
+              <Code>apps/frontend/src/app/leads/page.tsx</Code>. Tell the
+              agent about it in <Code>apps/agent/src/prompts.py</Code>.
             </p>
           </div>
           <div className="rounded-xl border bg-card p-5">
@@ -364,9 +396,9 @@ export default function AboutPage() {
                 MCP server registry
               </a>
               , swap the <Code>mcpServers</Code> config dict in{" "}
-              <Code>agent/src/notion_mcp.py</Code>, then edit{" "}
+              <Code>apps/agent/src/notion_mcp.py</Code>, then edit{" "}
               <Code>INTEGRATION_PROMPT</Code> in{" "}
-              <Code>agent/src/prompts.py</Code> with the new vocabulary.
+              <Code>apps/agent/src/prompts.py</Code> with the new vocabulary.
               Restart the agent. Done.
             </p>
           </div>
@@ -378,7 +410,7 @@ export default function AboutPage() {
               </h3>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Edit <Code>mcp/index.ts</Code> and add another{" "}
+              Edit <Code>apps/mcp/index.ts</Code> and add another{" "}
               <Code>server.tool(...)</Code>. The runtime auto-discovers it on
               the next reload. Want a fresh server alongside?{" "}
               <Code>npx create-mcp-use-app@latest</Code>. Or point at a
@@ -463,8 +495,9 @@ export default function AboutPage() {
                 <Code>GEMINI_API_KEY</Code> &mdash; required
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Set in both <Code>.env</Code> and <Code>agent/.env</Code>.
-                Without it the agent boots but every chat turn fails.
+                Set in both <Code>.env</Code> and{" "}
+                <Code>apps/agent/.env</Code>. Without it the agent boots but
+                every chat turn fails.
               </p>
             </div>
           </li>
@@ -514,6 +547,26 @@ export default function AboutPage() {
       </Section>
 
       <Section id="docs" eyebrow="Reference" title="Documentation">
+        <h3 className="mb-3 text-sm font-semibold text-foreground">
+          Deeper guides in the repo
+        </h3>
+        <ul className="mb-8 grid gap-2 md:grid-cols-2">
+          {repoDocs.map((d) => (
+            <li key={d.href}>
+              <a
+                href={d.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block rounded-md border bg-card px-3 py-2 text-sm text-foreground hover:border-accent/40 hover:text-accent"
+              >
+                {d.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">
+          External docs
+        </h3>
         <ul className="grid gap-2 md:grid-cols-2">
           {docs.map((d) => (
             <li key={d.href}>

@@ -6,8 +6,8 @@
     "apps/*"
   ],
   "scripts": {
-    "dev:infra": "docker compose -f deployment/docker-compose.yml up -d --wait && npm run seed",
-    "dev:infra:down": "docker compose -f deployment/docker-compose.yml down",
+    "dev:infra": "docker compose --project-directory . -f deployment/docker-compose.yml up -d --wait && npm run seed",
+    "dev:infra:down": "docker compose --project-directory . -f deployment/docker-compose.yml down",
     "seed": "bash scripts/seed-default-user.sh",
     "check-env": "bash scripts/check-env.sh",
     "predev": "bash scripts/check-env.sh",
@@ -20,7 +20,7 @@
     "dev:mcp": "npm run dev --workspace mcp",
     "install:agent": "cd apps/agent && uv sync",
     "install:mcp": "npm install --workspace mcp",
-    "postinstall": "npm run install:agent",
+    "postinstall": "ln -sf ../../.env apps/frontend/.env && npm run install:agent",
     "license": "npx copilotkit license -n hackathon-kit",
     "build": "npm run build --workspace frontend",
     "start": "npm run start --workspace frontend",
