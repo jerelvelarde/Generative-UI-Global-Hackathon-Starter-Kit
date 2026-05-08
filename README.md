@@ -40,7 +40,7 @@ The kit ships with a **Notion Leads database demo** wired through the official [
 
 [More about MCP ->](https://modelcontextprotocol.io)
 
-### Manufact (mcp-use)
+### Manufact / mcp-use
 
 The kit's `mcp/` package is an MCP server built with [`mcp-use`](https://manufact.com/mcp-use), the biggest open source Typescript framework for building MCP servers and MCP Apps. `npm run dev:mcp` gives you a full development environment with a local Inspector and support for hot reload for quick iteration. Easily deploy the server to [Manufact Cloud](https://manufact.com) with `npm run -w mcp deploy`.
 
