@@ -6,7 +6,8 @@
 #   2. npx is available so `@notionhq/notion-mcp-server` can be fetched
 #      on demand. We don't pull the package here (slow) — we just prove
 #      the resolver works.
-#   3. apps/agent/.env exists and has GEMINI_API_KEY, NOTION_TOKEN, and
+#   3. apps/agent/.env exists and has GEMINI_API_KEYS or GEMINI_API_KEY,
+#      plus NOTION_TOKEN and
 #      NOTION_LEADS_DATABASE_ID set to non-stub values.
 #   4. Notion is reachable AND the leads database is shared with the
 #      integration. Defers to `apps/agent/src/notion_tools.py --check`, which
@@ -53,13 +54,17 @@ else
     esac
     return 1
   }
-  for VAR in GEMINI_API_KEY NOTION_TOKEN NOTION_LEADS_DATABASE_ID; do
+  gemini_keys="$(read_var "GEMINI_API_KEYS" || true)"
+  gemini_key="$(read_var "GEMINI_API_KEY" || true)"
+  google_key="$(read_var "GOOGLE_API_KEY" || true)"
+  if is_stub "$gemini_keys" && is_stub "$gemini_key" && is_stub "$google_key"; then
+    PROBLEMS+=("GEMINI_API_KEYS is unset (or a stub) in apps/agent/.env. Set it to a comma-separated primary,backup key list from https://aistudio.google.com -> Get API key.")
+  fi
+
+  for VAR in NOTION_TOKEN NOTION_LEADS_DATABASE_ID; do
     val="$(read_var "$VAR" || true)"
     if is_stub "$val"; then
       case "$VAR" in
-        GEMINI_API_KEY)
-          PROBLEMS+=("$VAR is unset (or a stub) in apps/agent/.env. Get a key at https://aistudio.google.com -> Get API key.")
-          ;;
         NOTION_TOKEN)
           PROBLEMS+=("$VAR is unset (or a stub) in apps/agent/.env. Get a token at https://notion.so/my-integrations -> New integration -> Internal Integration Token.")
           ;;
