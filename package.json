@@ -10,6 +10,7 @@
     "dev:infra:down": "docker compose --project-directory . -f deployment/docker-compose.yml down",
     "seed": "bash scripts/seed-default-user.sh",
     "check-env": "bash scripts/check-env.sh",
+    "smoke": "bash scripts/smoke.sh",
     "predev": "bash scripts/check-env.sh",
     "dev": "npm run dev:infra && concurrently -k -n ui,bff,agent -c blue,cyan,green \"npm run dev:ui\" \"npm run dev:bff\" \"npm run dev:agent\"",
     "predev:full": "bash scripts/check-env.sh",
@@ -27,5 +28,9 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
   }
 }

@@ -61,32 +61,30 @@ else
     PROBLEMS+=("GEMINI_API_KEYS is unset (or a stub) in apps/agent/.env. Set it to a comma-separated primary,backup key list from https://aistudio.google.com -> Get API key.")
   fi
 
-  for VAR in NOTION_TOKEN NOTION_LEADS_DATABASE_ID; do
-    val="$(read_var "$VAR" || true)"
-    if is_stub "$val"; then
-      case "$VAR" in
-        NOTION_TOKEN)
-          PROBLEMS+=("$VAR is unset (or a stub) in apps/agent/.env. Get a token at https://notion.so/my-integrations -> New integration -> Internal Integration Token.")
-          ;;
-        NOTION_LEADS_DATABASE_ID)
-          PROBLEMS+=("$VAR is unset in apps/agent/.env. Paste the database id from your Notion database URL.")
-          ;;
-      esac
+  # Notion checks only fire if you've opted into the leads/Notion flow
+  # (NOTION_TOKEN set to a non-stub). Hearth devs can leave it unset — the
+  # leads canvas is legacy starter scaffolding.
+  notion_token="$(read_var "NOTION_TOKEN" || true)"
+  if ! is_stub "$notion_token"; then
+    notion_db="$(read_var "NOTION_LEADS_DATABASE_ID" || true)"
+    if is_stub "$notion_db"; then
+      PROBLEMS+=("NOTION_LEADS_DATABASE_ID is unset in apps/agent/.env (NOTION_TOKEN is set, so we assume you want the leads flow). Paste the database id from your Notion database URL, or clear NOTION_TOKEN to skip Notion checks.")
     fi
-  done
+  fi
 fi
 
-# ---------- 4. Notion reachable + database shared ---------------------------
-# Only run the live health check if the env vars passed (no point hitting the
-# network when we know auth will fail). The script prints OK: ... or FAIL: ...
-# with the share-gotcha fix on a 404.
-if [[ ${#PROBLEMS[@]} -eq 0 ]]; then
-  HEALTH_OUT="$(cd "$REPO_ROOT/apps/agent" && uv run python -m src.notion_tools --check 2>&1 || true)"
-  if ! grep -q "^OK: " <<<"$HEALTH_OUT"; then
-    # Pass the FAIL output through verbatim — the --check flag already
-    # formats the share-gotcha fix instructions when applicable.
-    PROBLEMS+=("Notion health check failed:
+# ---------- 4. Notion reachable + database shared (only if Notion in use) ---
+# Live health check only when both Notion vars are populated. Hearth-only devs
+# don't need Notion at all, so we skip silently.
+if [[ ${#PROBLEMS[@]} -eq 0 && -f "$AGENT_ENV" ]]; then
+  notion_token="$(read_var "NOTION_TOKEN" || true)"
+  notion_db="$(read_var "NOTION_LEADS_DATABASE_ID" || true)"
+  if ! is_stub "$notion_token" && ! is_stub "$notion_db"; then
+    HEALTH_OUT="$(cd "$REPO_ROOT/apps/agent" && uv run python -m src.notion_tools --check 2>&1 || true)"
+    if ! grep -q "^OK: " <<<"$HEALTH_OUT"; then
+      PROBLEMS+=("Notion health check failed:
 $HEALTH_OUT")
+    fi
   fi
 fi
 
