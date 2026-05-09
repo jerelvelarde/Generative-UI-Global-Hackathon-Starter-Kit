@@ -8,9 +8,9 @@ Run this BEFORE the demo. It exercises three layers in isolation:
 3. Prompt layer: build_system_prompt composes a non-empty Mood Architect
    prompt with the required markers.
 
-If you have GEMINI_API_KEY set, it ALSO runs a single live classification
-turn against five test goals and reports how many pass schema validation.
-This is the F-02 acceptance gate (≥ 4/5 valid). Skip it (no key) and the
+If you have GEMINI_API_KEYS / GEMINI_API_KEY set, it ALSO runs a single live
+classification turn against five test goals and reports how many pass schema
+validation. This is the F-02 acceptance gate (≥ 4/5 valid). Skip it (no key) and the
 script still verifies the offline path is sound.
 
 Usage::
@@ -126,8 +126,9 @@ _TEST_GOALS = [
 ]
 
 
-def check_live_gemini() -> None:
-    from gemini_keys import build_gemini_chat_model, has_gemini_api_key
+def check_live_classify() -> None:
+    """F-02 acceptance: 5 goals → ≥4 valid MoodProfiles via architect.classify_goal."""
+    from gemini_keys import has_gemini_api_key
 
     if not has_gemini_api_key():
         print("  ⊘ GEMINI_API_KEYS / GEMINI_API_KEY not set — skipping live check")
@@ -140,32 +141,12 @@ def check_live_gemini() -> None:
         print("  ⊘ langchain_google_genai not installed — skipping live check")
         return
 
-    from hearth.schema import MoodProfile, GoalKind  # noqa: F401
-    from prompts import build_system_prompt
-
-    llm = build_gemini_chat_model(
-        model=os.getenv("HEARTH_LIVE_MODEL", "gemini-3-flash-preview"),
-        temperature=0,
-    )
-
-    # Bind the schema as a tool so we can read the structured output cleanly.
-    structured = llm.with_structured_output(MoodProfile, method="function_calling")
-
-    system = build_system_prompt() + (
-        "\n\nSPECIAL INSTRUCTION FOR THIS RUN: respond ONLY by returning a "
-        "MoodProfile via the bound tool. No chat reply. No tool calls other "
-        "than the structured output."
-    )
+    from hearth.architect import classify_goal
 
     passes = 0
     for goal, expected_kind in _TEST_GOALS:
         try:
-            profile: MoodProfile = structured.invoke(
-                [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": goal},
-                ]
-            )
+            profile = classify_goal(goal)
             ok = (
                 profile.goal.kind == expected_kind
                 and 4 <= len(profile.levers) <= 6
@@ -185,18 +166,52 @@ def check_live_gemini() -> None:
     print(f"  → {passes}/5 passed (acceptance gate: ≥ 4)")
 
 
+def check_live_regen() -> None:
+    """F-08 acceptance: regen produces lever-id-disjoint profile from current."""
+    from gemini_keys import has_gemini_api_key
+
+    if not has_gemini_api_key():
+        print("  ⊘ GEMINI_API_KEYS / GEMINI_API_KEY not set — skipping regen check")
+        return
+
+    from hearth.architect import regenerate_for_reason
+    from hearth.presets import DEEP_FOCUS_PRESET
+
+    current = DEEP_FOCUS_PRESET
+    new = regenerate_for_reason(
+        original_goal="Debugging a flaky integration test, need 90 minutes of deep focus.",
+        current_profile=current,
+        reason="user pushed tempo to 50, below the deep_focus floor of 55",
+    )
+    current_ids = {l.id for l in current.levers}
+    new_ids = {l.id for l in new.levers}
+    overlap = current_ids & new_ids
+
+    print(f"  → new goal.kind: {new.goal.kind} (was {current.goal.kind})")
+    print(f"  → new scene: {new.visual.sceneId} (was {current.visual.sceneId})")
+    print(f"  → lever id overlap: {sorted(overlap) if overlap else 'none ✓'}")
+    if overlap:
+        print("  ✗ regen reused lever ids — Lever Card animation will read as value tweak")
+    elif new.goal.kind == current.goal.kind:
+        print("  ✗ regen kept same goal kind — mic-drop won't read as category change")
+    else:
+        print("  ✓ regen produced visually-distinct profile")
+
+
 # ---------------------------------------------------------------------- main
 
 
 def main() -> int:
-    print("[1/4] Schema")
+    print("[1/5] Schema")
     check_schema()
-    print("[2/4] Middleware")
+    print("[2/5] Middleware")
     check_middleware()
-    print("[3/4] Prompt composition")
+    print("[3/5] Prompt composition")
     check_prompts()
-    print("[4/4] Live Gemini classification (5 test goals)")
-    check_live_gemini()
+    print("[4/5] Live F-02 classification (5 test goals)")
+    check_live_classify()
+    print("[5/5] Live F-08 regeneration (deep_focus → ?)")
+    check_live_regen()
     print("\nDone.")
     return 0
 
