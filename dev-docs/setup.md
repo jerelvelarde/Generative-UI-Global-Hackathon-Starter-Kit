@@ -44,22 +44,43 @@ Prefer a different model (OpenAI, Anthropic, Ollama)? See [model-switching.md](m
 
 The kit calls Notion through the official [Notion MCP server](https://github.com/makenotion/notion-mcp-server) — a standalone process spawned on demand via `npx -y @notionhq/notion-mcp-server`. Auth is a single Notion integration token plus an explicit per-database share. No global install, no OAuth flow, no third-party broker.
 
-> **Sample database.** The kit is wired against an "AI Workshop Provider Community" lead-form database. Schema and seed rows live in two places — pick whichever's easier for you:
->
-> - **Public reference (read-only):** [view in Notion](https://www.notion.so/a274791c4e1e826d882d01562af74de9?v=0e04791c4e1e83ca834988083174d19e&source=copy_link) — duplicate it into your workspace to get an editable copy.
-> - **Re-importable export in this repo:** [`data/notion-leads-sample/ai-workshop-provider-community.zip`](../data/notion-leads-sample/ai-workshop-provider-community.zip) — in Notion, **Settings → Workspace → Import → Notion (CSV/ZIP)** and upload this file. Quick-look CSV alongside it: [`ai-workshop-provider-community.csv`](../data/notion-leads-sample/ai-workshop-provider-community.csv).
+The kit is wired against an "AI Workshop Provider Community" lead-form database. The fastest path is to duplicate the public sample into your own workspace; you can also re-import a CSV/ZIP if you'd rather start from a snapshot.
 
-1. Create a Notion integration: go to https://notion.so/my-integrations → **New integration** → name it (e.g. "Hackathon kit") → copy the **Internal Integration Token**.
-2. Open the Notion database you want to read from — either the sample above (duplicated into your workspace) or your own database with the same shape.
-3. **Share the database with your integration**: open the database in Notion → click the `...` menu (top-right) → **Connections** → add the integration you just created. *Notion's per-database access model means a fresh token sees zero databases until it's been shared into them — this is the most common point of failure.*
-4. Paste both into `apps/agent/.env` (and `.env`):
+### 1. Get the database into your workspace
 
-   ```bash
-   NOTION_TOKEN=<paste the Internal Integration Token>
-   NOTION_LEADS_DATABASE_ID=<paste the database id from its Notion URL>
-   ```
+**Option A — duplicate the public sample (recommended).**
+1. Open the public template: [AI Workshop Provider Community](https://assorted-stomach-b12.notion.site/a274791c4e1e826d882d01562af74de9?v=0e04791c4e1e83ca834988083174d19e&source=copy_link).
+2. In the top-right of the page, click the **Duplicate** icon (two overlapping squares, next to the share icon and the `…` menu). Notion will prompt you to pick a destination workspace and copy the database — schema, views, and seed rows all come along.
+3. Once Notion drops you into the duplicated copy, **bookmark its URL** — you'll need the database id from it in step 3.
 
-5. Restart the agent. Try: **"Import the workshop leads."**
+**Option B — re-import the bundled snapshot.**
+1. In Notion, **Settings → Workspace → Import → Notion (CSV/ZIP)** and upload [`data/notion-leads-sample/ai-workshop-provider-community.zip`](../data/notion-leads-sample/ai-workshop-provider-community.zip). A quick-look CSV lives next to it at [`ai-workshop-provider-community.csv`](../data/notion-leads-sample/ai-workshop-provider-community.csv).
+
+### 2. Create an integration and share it with the database
+
+1. Go to https://notion.so/my-integrations → **New integration** → name it (e.g. "genai-starterkit") → copy the **Internal Integration Token** (starts with `ntn_…` or `secret_…`).
+2. Open the duplicated database in Notion. Click the `…` menu in the top-right → **Connections** (count badge will read `0`) → **Add connection** → pick the integration you just created. The panel will flip to **Active connections** with your integration listed.
+
+   > Notion's permission model is per-database — a fresh integration token sees zero databases until it's been shared into them. **Forgetting this share step is the most common point of failure.** If `npm run dev` boots cleanly but `Import the leads` fails with "object not found", come back here.
+
+### 3. Paste the credentials into `.env`
+
+Pull the database id from the URL of your duplicated copy: it's the 32-char hex string between the workspace slug and the `?v=` query (e.g. `a274791c4e1e826d882d01562af74de9`).
+
+Paste both into `apps/agent/.env` (and `.env` at the repo root):
+
+```bash
+NOTION_TOKEN=<paste the Internal Integration Token>
+NOTION_LEADS_DATABASE_ID=<paste the database id from its Notion URL>
+```
+
+### 4. Restart the agent
+
+```bash
+npm run dev
+```
+
+Then try: **"Import the workshop leads."**
 
 To use a different MCP server (Linear, Slack, GitHub, …), edit `apps/agent/src/notion_mcp.py` — replace the `mcpServers` config dict and update `mcp_query_data_source` / friends to call the new server's tool names. Then edit `apps/agent/src/prompts.py` (`INTEGRATION_PROMPT`) so the agent knows the new vocabulary.
 
