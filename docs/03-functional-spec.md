@@ -29,7 +29,7 @@ Every feature has an ID (`F-XX`) for cross-referencing in the technical spec and
 | F-13 | LangSmith trace panel | ✅ |
 | F-14 | Goal pill (top-left status) | ✅ |
 | F-15 | Idle UI fade | ✅ |
-| F-16 | Lyria 2 live music generation | 🟡 stretch |
+| F-16 | Lyria live music generation | 🟡 stretch |
 | F-17 | Imagen 4 parallax stills | 🟡 stretch |
 | F-18 | Reference image upload (multimodal) | 🟡 stretch |
 | F-19 | LangGraph multi-agent (real, not single-call) | 🟡 stretch |
@@ -62,7 +62,7 @@ Every feature has an ID (`F-XX`) for cross-referencing in the technical spec and
 **Trigger:** Goal submitted from F-01.
 
 **Behavior:**
-- Single Gemini 3.1 Pro call with structured output (Pydantic/Zod schema = `MoodProfile`)
+- Single `gemini-3.1-pro-preview` call with structured output (Pydantic/Zod schema = `MoodProfile`)
 - Input: free-text goal + system prompt (defines the four `goal.kind` enum values, the lever vocabulary, the scene options)
 - Output: full `MoodProfile` including `goal.kind`, `music`, `visual`, `levers[]`, `evolution`
 - Streaming: not required for MVP (response < 3s)
@@ -88,7 +88,7 @@ Every feature has an ID (`F-XX`) for cross-referencing in the technical spec and
 
 **Behavior:**
 - Total duration: **exactly 8 seconds**
-- Frame-by-frame from user spec (Beat 3) implemented as a Framer Motion timeline
+- Frame-by-frame from user spec (Beat 3) implemented as a Motion (`motion/react`) timeline
 - Single shader is rendered throughout — uniforms tween from "void" preset to scene's initial preset
 - Audio: silence → soft rain (3s in) → lo-fi loop fade-in (5s in)
 - Goal text dims, lifts, blurs in first 1s; reappears as goal pill (F-14) at 7s mark
@@ -161,7 +161,7 @@ Every feature has an ID (`F-XX`) for cross-referencing in the technical spec and
 **Behavior:**
 - Each lever declares a `bindTo` path (e.g., `"music.bpm"`, `"visual.uniforms.rainIntensity"`)
 - On drag, `MoodProfile` is mutated at that path (debounced at 50ms during drag, committed on release)
-- `MoodProfile` is shared state via CopilotKit's `useCoAgent` — frontend writes are visible to backend agent
+- `MoodProfile` is frontend-owned for MVP demo reliability; CopilotKit frontend tools and chat messages mutate the same profile so backend actions are visible in the UI
 - Audio engine (F-11) and scene renderer (F-04) subscribe to relevant paths and react
 
 **Edge cases:**
@@ -200,7 +200,7 @@ Every feature has an ID (`F-XX`) for cross-referencing in the technical spec and
 **Behavior:**
 - Side panel streams agent reasoning: *"Mood Architect: detecting energy drop. Reclassifying as wind-down session."*
 - Chime sound plays
-- A new Gemini 3.1 Pro call is made with: original goal + current MoodProfile + reason (*"user pushed BPM to {value}"*)
+- A new `gemini-3.1-pro-preview` call can be made with: original goal + current MoodProfile + reason (*"user pushed BPM to {value}"*)
 - Output: new full `MoodProfile` with different `goal.kind`, `levers[]`, `visual.sceneId`
 - F-09 (card transition) and F-10 (scene morph) fire from the new profile
 
@@ -357,8 +357,8 @@ Every feature has an ID (`F-XX`) for cross-referencing in the technical spec and
 
 ## Stretch features (briefly)
 
-### F-16 — Lyria 2 live music generation
-Replace pre-baked crossfade with real Lyria 2 calls. On significant `MoodProfile.music` change (debounced 5s), call Lyria with `promptForGen` from profile; cache result; crossfade in. Falls back to pre-baked on failure. 30s clips loop with Tone.js.
+### F-16 — Lyria live music generation
+Replace pre-baked crossfade with real Lyria calls. Prefer `lyria-3-clip-preview` for short loop generation if available through the Gemini API; otherwise use Vertex `lyria-002`. On significant `MoodProfile.music` change (debounced 5s), call Lyria with `promptForGen` from profile; cache result; crossfade in. Falls back to pre-baked on failure. 30s clips loop with Tone.js.
 
 ### F-17 — Imagen 4 parallax stills
 Generate window-view image at scene init (e.g., "view through cabin window of a misty pine forest at dusk, painterly, warm"). Render as parallax layer. Cache by scene+goal hash.

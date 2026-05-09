@@ -41,7 +41,7 @@ The hackathon judging audience overlaps almost entirely with this profile, which
 2. **Demonstrate a clean agentic feedback loop.** User adjusts a lever → agent regenerates state → UI reflects the regeneration → user adjusts again. Visible, smooth, repeatable.
 3. **Show the affordance set itself regenerating.** When the user's behavior implies a different mood, the lever set is replaced with a new one (different controls, not just different values).
 4. **Multi-sensory wow.** Audio + visuals + control all responding to a single conversational signal.
-5. **Use the sponsor stack visibly and coherently.** CopilotKit (UI), Gemini 3.1 Pro (agent), Lyria 2 (music), LangGraph (multi-agent), LangSmith (trace).
+5. **Use the hackathon stack visibly and coherently.** CopilotKit/AG-UI (runtime UI), Gemini 3.1 Pro Preview (agent), LangGraph (agent runtime), LangSmith (trace/story panel), and Google media models only where they improve the demo without risking the 6-hour build.
 
 ## Non-goals
 
@@ -71,20 +71,20 @@ Hackathon-specific. There is one user (the judge), one session (the demo).
 
 A web app with three surfaces, all driven by a shared `MoodProfile` state object that both the user and the agent ensemble write to:
 
-1. **The Room** (full-screen WebGL scene). Parameterized shader that responds to mood profile uniforms — color temperature, rain intensity, fog, motion rate, time-of-day, vignette. Two scene templates for MVP: **forest cabin** (deep focus) and **warm bedroom** (wind-down). Audio plays underneath: a Lyria-generated loop crossfaded with rain/noise textures.
+1. **The Room** (full-screen WebGL scene). Parameterized shader that responds to mood profile uniforms — color temperature, rain intensity, fog, motion rate, time-of-day, vignette. Two scene templates for MVP: **forest cabin** (deep focus) and **warm bedroom** (wind-down). Audio plays underneath: pre-baked loops crossfaded with rain/noise textures. Live Lyria generation is stretch only.
 
 2. **The Lever Card** (right side). The agent's emitted control surface for *this* user, *this* goal, *this* moment. Each lever binds to either a music parameter (BPM, intensity, valence) or a visual parameter (rain, color temp, motion). The set of levers is **selected by the agent** — not hardcoded. Pushing a lever past its declared "valid range for this goal" triggers a regeneration: the card animates out and a new card with a different set replaces it.
 
-3. **The Conversation** (left side, collapsible). A standard CopilotKit chat surface where the user can type free-form direction ("less melodic, more drone"), upload reference images for mood (Imagen multimodal in), and observe the agent's reasoning trace.
+3. **The Conversation** (left side, collapsible). A CopilotKit chat surface where the user can type free-form direction ("less melodic, more drone") and observe visible state changes. Reference-image upload is stretch only.
 
-**The agent ensemble** (LangGraph):
+**The agent story** (LangGraph + CopilotKit):
 
-- **Mood Architect** (Gemini 3.1 Pro, MEDIUM thinking) — root planner. Reads the goal, writes the `MoodProfile`, decides the lever set.
-- **Music Producer** (Lyria 2) — generates 30s music clips matched to the profile.
-- **Visual Director** (Imagen 4 Fast for parallax stills + shader uniform writer) — sets visual parameters.
-- **Critic** (Gemini 3.1 Flash) — validates that the generated package matches the goal before the user sees it.
+- **Mood Architect** (Gemini 3.1 Pro Preview, thinking enabled) — root planner. Reads the goal, writes the `MoodProfile`, decides the lever set.
+- **Music Producer** (MVP: pre-baked loops; stretch: Lyria 3 Clip Preview or Lyria 2 if credits only cover Vertex) — generates or selects 30s music clips matched to the profile.
+- **Visual Director** (MVP: shader uniform writer; stretch: Imagen 4 Fast / Nano Banana preview if available) — sets visual parameters.
+- **Critic** (MVP: schema validation + fallback preset; stretch: Gemini Flash validator) — validates that the generated package matches the goal before the user sees it.
 
-LangSmith traces every dispatch — visible to demo viewers via a side panel.
+LangSmith trace visibility is a demo requirement, but real trace ingestion is stretch. The MVP may show a truthful stylized trace of the exact state transitions if live LangSmith wiring would endanger the demo.
 
 ---
 
@@ -93,7 +93,7 @@ LangSmith traces every dispatch — visible to demo viewers via a side panel.
 | | claude-music (reference) | Brain.fm / Endel | **Hearth** |
 |---|---|---|---|
 | Surface | Terminal CLI | Mobile app | Web, full-screen ambient |
-| Music | Pre-existing radio | Curated procedural | **Generated per goal** |
+| Music | Pre-existing radio | Curated procedural | **Selected/generated per goal** |
 | Visuals | None | Static gradients | **Live WebGL scene** |
 | Control surface | Static slash commands | Fixed sliders | **GenUI — generated per goal** |
 | Affordance regeneration | None | None | **Yes — set changes mid-session** |
@@ -109,18 +109,17 @@ LangSmith traces every dispatch — visible to demo viewers via a side panel.
 4. **One** lever card template for "deep focus" goal (4–6 levers)
 5. **One** alternate lever card for "wind-down" (4–6 levers, different ones)
 6. Pre-baked audio: 4 short loops (low/mid/high focus + wind-down) + rain/noise textures, crossfaded by Tone.js
-7. Mood Architect agent with structured Gemini 3.1 Pro output → emits `MoodProfile`
+7. Mood Architect agent with structured `gemini-3.1-pro-preview` output → emits `MoodProfile`
 8. Hardcoded threshold rule for triggering regeneration (no real reasoning required for MVP)
-9. README with differentiation pitch, sponsor stack, science citations, demo GIF
+9. README with differentiation pitch, transparent build notes, sponsor stack, and demo GIF/video
 
 ## Stretch (in only if 5 PM hits with polish budget left)
 
-- **Real-time Lyria 2 generation** — replaces pre-baked audio crossfade
-- **Imagen 4 parallax stills** — agent generates a window-view image based on user's stated environment preference
-- **Spotify MCP integration** — "save this session as a playlist"
+- **Real-time Lyria generation** — use `lyria-3-clip-preview` for short clips if Gemini API access is enabled; otherwise use Vertex `lyria-002` / Lyria 2. Keep pre-baked audio as fallback.
+- **Imagen / Nano Banana parallax stills** — agent generates a window-view image based on user's stated environment preference
 - **Reference image upload** — user drops a mood photo, Mood Architect reads via Gemini 3.1 multimodal in
-- **LangGraph multi-agent (real, not single-call)** — visible trace in side panel
-- **Conversation surface** — actual chat interaction (vs. just goal input)
+- **LangGraph multi-agent (real, not single-call)** — visible LangSmith trace in side panel
+- **MCP Apps / A2UI surface** — only if the core room works early; not required for the winning moment
 
 ## Out of scope (don't even joke about it)
 
@@ -143,7 +142,7 @@ LangSmith traces every dispatch — visible to demo viewers via a side panel.
 | Public GitHub | README is part of the submission. Write from hour 1. |
 | Async judging weight | Demo video + README must stand alone. |
 | Sponsor stack must be visible | At least 3 logos in demo, all in README. |
-| No pre-existing code allowed | Per handbook. Concepts/design from prior thinking OK. |
+| Pre-existing code is allowed but judged | Be transparent about starter-kit usage and what was built during the six focused hours. |
 
 ---
 
@@ -151,8 +150,8 @@ LangSmith traces every dispatch — visible to demo viewers via a side panel.
 
 1. **Goal entry: pure free-text.** Agent infers goal kind. Reasoning: most impressive GenUI demonstration — the *classification itself* is agent work. Mitigation: schema-validate the goal kind output; fall back to "deep_focus" preset on parse failure.
 2. **Chat surface: persistent collapsible chat in MVP.** CopilotKit's chat is always available; user can type free-form direction mid-session. Reasoning: sponsor visibility + supports the agentic feedback loop continuously, not just at start.
-3. **Audio: pre-baked for MVP, Lyria 2 in stretch.** 4 pre-generated loops crossfade via Tone.js. Lyria 2 generation runs in background as stretch — swap in if working, retain pre-baked as fallback.
-4. **LangSmith trace panel: ship in MVP.** Tiny effort, large sponsor visibility, makes the multi-agent story legible to async judges.
+3. **Audio: pre-baked for MVP, Lyria in stretch.** 4 pre-generated loops crossfade via Tone.js. Live generation runs in background as stretch — swap in if working, retain pre-baked as fallback.
+4. **Trace panel: ship as a truthful stylized MVP.** If live LangSmith setup is ready, wire it. If not, show the state transitions and mention LangSmith in README as stretch/next step.
 5. **Spotify integration: cut entirely.** OAuth complexity not worth it for a 6h demo. Re-evaluate only if everything else ships by 4 PM.
 
 ## Locked anchors
@@ -167,8 +166,8 @@ LangSmith traces every dispatch — visible to demo viewers via a side panel.
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | Shader scenes take longer than 1.5h to look good | Med | High | Use a known-good `r3f` boilerplate; only one scene polished |
-| Gemini 3.1 Pro structured output flaky | Low | High | Schema-validate; retry once; fall back to hardcoded preset on failure |
-| Lyria 2 access blocked or slow (stretch) | Med | Low | Pre-baked audio is the MVP; Lyria is gravy |
+| Gemini structured output flaky | Low | High | Use `gemini-3.1-pro-preview`; schema-validate; retry once; fall back to hardcoded preset on failure |
+| Lyria access blocked or slow (stretch) | Med | Low | Pre-baked audio is the MVP; Lyria is optional sponsor credit |
 | CopilotKit GenUI template breaking changes | Low | High | Pin versions early; don't upgrade mid-build |
 | Tone.js crossfades click/pop on transition | Med | Med | Use `Tone.CrossFade` with EQ-matched tails; test early |
 | Demo recording fails at 5:00 PM | Low | Catastrophic | Record at 4:45 PM as well; keep the better take |
