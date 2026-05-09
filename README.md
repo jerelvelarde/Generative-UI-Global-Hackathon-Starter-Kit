@@ -97,6 +97,13 @@ The kit's `apps/mcp/` package is an MCP server built with [`mcp-use`](https://ma
 
 ## Run it locally
 
+**Prerequisites** — install these before step 1:
+
+- **Node.js 20+** (bundles `npm`/`npx`).
+- **Python 3.10+**.
+- **[`uv`](https://docs.astral.sh/uv/getting-started/installation/)** — `npm install` triggers a `uv sync` post-install for the Python agent and will fail without it.
+- **Docker Desktop**, installed and running before step 4 — the kit boots Postgres + Redis + Intelligence via `docker compose` as part of `npm run dev`. (Can't run Docker? See [Removing Intelligence (Docker-free mode)](dev-docs/setup.md#removing-intelligence-docker-free-mode).)
+
 1. Copy the env templates: `cp .env.example .env && cp apps/agent/.env.example apps/agent/.env`.
 2. Get a CopilotKit Intelligence license — run `npx copilotkit@latest license` (or sign in at [dashboard.operations.copilotkit.ai/sign-in](https://dashboard.operations.copilotkit.ai/sign-in) for the manual path). Paste the token into `.env` as `COPILOTKIT_LICENSE_TOKEN`.
 3. Add a Gemini API key — paste it into **both** `.env` and `apps/agent/.env` (the slot is already in each template from step 1). Then follow [Notion setup](#notion-setup) below for the integration token + database id.
