@@ -30,9 +30,9 @@ import os
 import threading
 from typing import Any, Dict, List, Optional
 
-from dotenv import load_dotenv
+from .env_loader import bootstrap_env
 
-load_dotenv()
+bootstrap_env()
 
 
 # --- mcp-use lazy import -------------------------------------------------
