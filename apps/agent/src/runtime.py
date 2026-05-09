@@ -22,9 +22,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from copilotkit import CopilotKitMiddleware
 
-from .gemini_keys import build_gemini_chat_model
-from .hearth.mood_state import MoodStateMiddleware
-from .lead_state import LeadStateMiddleware  # kept for legacy lead-triage runtime; not used by Hearth
+from .lead_state import LeadStateMiddleware
 from .timing import TimingMiddleware
 
 
@@ -81,9 +79,9 @@ def build_graph(
         runtime = "gemini-flash-deep"
 
     timing = TimingMiddleware()
-    mood_state = MoodStateMiddleware()
+    lead_state = LeadStateMiddleware()
     copilotkit = CopilotKitMiddleware()
-    middleware = [timing, mood_state, copilotkit]
+    middleware = [timing, lead_state, copilotkit]
 
     if runtime == "noop":
         return _build_noop(NOOP_FALLBACK_MESSAGE)
@@ -152,9 +150,13 @@ def _gemini_llm():
     model. Verified against `langchain-google-genai` 2.x; swap the id here
     if you want `gemini-3.1-pro-preview` for a reasoning-heavy demo path.
     """
-    return build_gemini_chat_model(
+    from langchain_google_genai import ChatGoogleGenerativeAI
+
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "stub"
+    return ChatGoogleGenerativeAI(
         model="gemini-3-flash-preview",
         temperature=0,
+        api_key=api_key,
     )
 
 

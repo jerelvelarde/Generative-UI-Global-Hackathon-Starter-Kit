@@ -409,7 +409,7 @@ Do not downgrade existing starter dependencies mid-build. Add only the frontend 
 ## Environment variables
 
 ```
-GEMINI_API_KEYS=primary,backup    # required, MVP; comma-separated failover keyring
+GEMINI_API_KEY=...                # required, MVP
 COPILOTKIT_LICENSE_TOKEN=...      # from `npx copilotkit@latest license`
 INTELLIGENCE_API_KEY=...          # existing local/dev CopilotKit Intelligence key
 LANGSMITH_API_KEY=...             # optional MVP / stretch trace wiring
