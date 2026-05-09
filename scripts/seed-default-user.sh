@@ -15,11 +15,38 @@ set -euo pipefail
 CONTAINER="${INTELLIGENCE_PG_CONTAINER:-hackathon-intelligence-notion-postgres-1}"
 ORG_ID="${INTELLIGENCE_DEFAULT_ORG_ID:-casa-de-erlang}"
 
-if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
+resolve_docker_cmd() {
+  if [[ -n "${DOCKER_BIN:-}" ]]; then
+    echo "${DOCKER_BIN}"
+    return 0
+  fi
+  if command -v docker >/dev/null 2>&1; then
+    command -v docker
+    return 0
+  fi
+  if command -v docker.exe >/dev/null 2>&1; then
+    command -v docker.exe
+    return 0
+  fi
+  local win_docker="/c/Program Files/Docker/Docker/resources/bin/docker.exe"
+  if [[ -x "$win_docker" ]]; then
+    echo "$win_docker"
+    return 0
+  fi
+  return 1
+}
+
+DOCKER_CMD="$(resolve_docker_cmd || true)"
+if [[ -z "$DOCKER_CMD" ]]; then
+  echo "ERROR: docker CLI not found. Set DOCKER_BIN or install Docker Desktop." >&2
+  exit 1
+fi
+
+if ! "$DOCKER_CMD" ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
   echo "ERROR: Postgres container '${CONTAINER}' not running. Did you run 'npm run dev:infra'?" >&2
   exit 1
 fi
 
 SQL="INSERT INTO cpki.users (id, organization_id, created_at) VALUES ('default', '${ORG_ID}', NOW()), ('1_default', '${ORG_ID}', NOW()) ON CONFLICT (id) DO NOTHING; SELECT id, organization_id FROM cpki.users WHERE id IN ('default','1_default');"
 
-docker exec "$CONTAINER" psql -U intelligence -d intelligence_app -v ON_ERROR_STOP=1 -c "$SQL"
+"$DOCKER_CMD" exec "$CONTAINER" psql -U intelligence -d intelligence_app -v ON_ERROR_STOP=1 -c "$SQL"

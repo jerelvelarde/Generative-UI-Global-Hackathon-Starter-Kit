@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-# scripts/check-env.sh — pre-flight wired into `predev` (npm convention).
+# scripts/check-env.sh - pre-flight wired into `predev` (npm convention).
 #
 # Validates, in order, that everything `npm run dev` needs is in place:
 #   1. Docker daemon up.
 #   2. npx is available so `@notionhq/notion-mcp-server` can be fetched
-#      on demand. We don't pull the package here (slow) — we just prove
+#      on demand. We don't pull the package here (slow) - we just prove
 #      the resolver works.
-#   3. Either root `.env` or `apps/agent/.env` provides GEMINI_API_KEY,
-#      NOTION_TOKEN, and NOTION_LEADS_DATABASE_ID as non-stub values.
-#   4. Notion is reachable AND the leads database is shared with the
-#      integration. Defers to `apps/agent/src/notion_tools.py --check`, which
-#      reports an actionable FAIL: with the share-gotcha fix on a 404.
+#   3. Either root `.env` or `apps/agent/.env` provides GEMINI_API_KEY.
+#   4. Root `.env` provides COPILOTKIT_LICENSE_TOKEN for Intelligence.
+#   5. Optional: when NOTION_TOKEN + NOTION_LEADS_DATABASE_ID are present,
+#      Notion is validated via `apps/agent/src/notion_tools.py --check`.
 #
 # Collects every problem into a numbered list rather than bailing on the
 # first failure, so participants can fix the whole batch in one pass.
@@ -21,11 +20,34 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 PROBLEMS=()
+WARNINGS=()
+
+# If set to 1, missing Notion credentials becomes a hard failure.
+# Default 0 keeps local-store workflows unblocked.
+STRICT_NOTION_ENV="${STRICT_NOTION_ENV:-0}"
+
+resolve_docker_cmd() {
+  if command -v docker >/dev/null 2>&1; then
+    command -v docker
+    return 0
+  fi
+  if command -v docker.exe >/dev/null 2>&1; then
+    command -v docker.exe
+    return 0
+  fi
+  local win_docker="/c/Program Files/Docker/Docker/resources/bin/docker.exe"
+  if [[ -x "$win_docker" ]]; then
+    echo "$win_docker"
+    return 0
+  fi
+  return 1
+}
 
 # ---------- 1. Docker daemon -------------------------------------------------
-if ! command -v docker >/dev/null 2>&1; then
+DOCKER_CMD="$(resolve_docker_cmd || true)"
+if [[ -z "$DOCKER_CMD" ]]; then
   PROBLEMS+=("Docker isn't installed. Install Docker Desktop and re-try.")
-elif ! docker info >/dev/null 2>&1; then
+elif ! "$DOCKER_CMD" info >/dev/null 2>&1; then
   PROBLEMS+=("Docker isn't running. Start Docker Desktop and re-try.")
 fi
 
@@ -37,6 +59,7 @@ fi
 # ---------- 3. env vars (root .env + optional agent override) ----------------
 ROOT_ENV="$REPO_ROOT/.env"
 AGENT_ENV="$REPO_ROOT/apps/agent/.env"
+notion_creds_present=0
 
 if [[ ! -f "$ROOT_ENV" && ! -f "$AGENT_ENV" ]]; then
   PROBLEMS+=("No env file found. Create .env at repo root (preferred) or apps/agent/.env.")
@@ -68,36 +91,51 @@ else
     esac
     return 1
   }
-  for VAR in GEMINI_API_KEY NOTION_TOKEN NOTION_LEADS_DATABASE_ID; do
-    val="$(read_var "$VAR" || true)"
-    if is_stub "$val"; then
-      case "$VAR" in
-        GEMINI_API_KEY)
-          PROBLEMS+=("$VAR is unset (or a stub) in .env (or apps/agent/.env override). Get a key at https://aistudio.google.com -> Get API key.")
-          ;;
-        NOTION_TOKEN)
-          PROBLEMS+=("$VAR is unset (or a stub) in .env (or apps/agent/.env override). Get a token at https://notion.so/my-integrations -> New integration -> Internal Integration Token.")
-          ;;
-        NOTION_LEADS_DATABASE_ID)
-          PROBLEMS+=("$VAR is unset in .env (or apps/agent/.env override). Paste the database id from your Notion database URL.")
-          ;;
-      esac
+
+  GEMINI_VAL="$(read_var GEMINI_API_KEY || true)"
+  COPILOTKIT_LICENSE_VAL="$(read_var COPILOTKIT_LICENSE_TOKEN || true)"
+  NOTION_TOKEN_VAL="$(read_var NOTION_TOKEN || true)"
+  NOTION_DB_VAL="$(read_var NOTION_LEADS_DATABASE_ID || true)"
+
+  if is_stub "$GEMINI_VAL"; then
+    PROBLEMS+=("GEMINI_API_KEY is unset (or a stub) in .env (or apps/agent/.env override). Get a key at https://aistudio.google.com -> Get API key.")
+  fi
+
+  if is_stub "$COPILOTKIT_LICENSE_VAL"; then
+    PROBLEMS+=("COPILOTKIT_LICENSE_TOKEN is unset in .env. Run `npx copilotkit@latest license` and paste the token into .env.")
+  fi
+
+  if ! is_stub "$NOTION_TOKEN_VAL" && ! is_stub "$NOTION_DB_VAL"; then
+    notion_creds_present=1
+  else
+    if [[ "$STRICT_NOTION_ENV" == "1" ]]; then
+      if is_stub "$NOTION_TOKEN_VAL"; then
+        PROBLEMS+=("NOTION_TOKEN is unset (or a stub) in .env (or apps/agent/.env override). Get a token at https://notion.so/my-integrations -> New integration -> Internal Integration Token.")
+      fi
+      if is_stub "$NOTION_DB_VAL"; then
+        PROBLEMS+=("NOTION_LEADS_DATABASE_ID is unset in .env (or apps/agent/.env override). Paste the database id from your Notion database URL.")
+      fi
+    else
+      WARNINGS+=("Notion credentials are missing; running in local-store mode (set STRICT_NOTION_ENV=1 to require Notion).")
     fi
-  done
+  fi
 fi
 
 # ---------- 4. Notion reachable + database shared ---------------------------
-# Only run the live health check if the env vars passed (no point hitting the
-# network when we know auth will fail). The script prints OK: ... or FAIL: ...
-# with the share-gotcha fix on a 404.
-if [[ ${#PROBLEMS[@]} -eq 0 ]]; then
+# Only run the live health check when Notion credentials are present.
+if [[ ${#PROBLEMS[@]} -eq 0 && "$notion_creds_present" == "1" ]]; then
   HEALTH_OUT="$(cd "$REPO_ROOT/apps/agent" && uv run python -m src.notion_tools --check 2>&1 || true)"
   if ! grep -q "^OK: " <<<"$HEALTH_OUT"; then
-    # Pass the FAIL output through verbatim — the --check flag already
-    # formats the share-gotcha fix instructions when applicable.
     PROBLEMS+=("Notion health check failed:
 $HEALTH_OUT")
   fi
+fi
+
+if [[ ${#WARNINGS[@]} -gt 0 ]]; then
+  echo ""
+  for w in "${WARNINGS[@]}"; do
+    echo "Warning: $w"
+  done
 fi
 
 # ---------- Report -----------------------------------------------------------
