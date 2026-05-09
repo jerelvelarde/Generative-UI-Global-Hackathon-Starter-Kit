@@ -5,9 +5,9 @@
 | Symptom | Cause | Fix |
 |---|---|---|
 | `npm run dev` aborts with "Docker isn't running" | Docker Desktop not started | Start Docker Desktop and re-run. The pre-flight retries automatically. |
-| Pre-flight prints "GEMINI_API_KEYS is unset (or a stub)" | Gemini keyring not pasted into `apps/agent/.env` | Get keys at https://aistudio.google.com → Get API key, paste `GEMINI_API_KEYS=primary,backup` into `apps/agent/.env` and `.env`. |
+| Pre-flight prints "GEMINI_API_KEY is unset (or a stub)" | Gemini key not pasted into `apps/agent/.env` | Get one at https://aistudio.google.com → Get API key, paste into `apps/agent/.env` (and `.env`). |
 | Pre-flight prints "NOTION_TOKEN is unset" | Notion token not pasted | Create an integration at [notion.so/profile/integrations/internal](https://www.notion.so/profile/integrations/internal) and paste the Internal Integration Token into `apps/agent/.env`. |
-| Chat hangs forever, never replies | `GEMINI_API_KEYS` not set when you skipped the pre-flight (e.g. ran `npm run dev:agent` directly) | Set it in `apps/agent/.env` and restart the agent. The agent now answers in <3s with a setup pointer when the keyring is missing instead of hanging. |
+| Chat hangs forever, never replies | `GEMINI_API_KEY` not set when you skipped the pre-flight (e.g. ran `npm run dev:agent` directly) | Set it in `apps/agent/.env` and restart the agent. The agent now answers in <3s with a setup pointer when the key is missing instead of hanging. |
 | Toast: "Run `npm run seed` to seed the default user" | Postgres `default` / `1_default` user not seeded | Run `npm run seed`. The BFF rewrites the upstream `threads_user_id_fkey` 500 into this hint automatically. |
 | Notion health check returns "0 rows" or "shared with this integration" | Database not shared with your integration | Open the database in Notion → `...` menu → **Connections** → **+ Add connection** → pick your integration **directly** (not via parent-page inheritance — that's the most common gotcha). |
 | `Could not find database with ID …` | Wrong `NOTION_LEADS_DATABASE_ID` *or* not shared | Both — verify by running `cd apps/agent && uv run python -m src.notion_tools --check`. The output names which one is wrong. |
@@ -36,7 +36,7 @@ Free tier is generous but not infinite. Either wait, switch to a paid Gemini key
 <summary><strong>Agent says "I'm having trouble connecting to my tools"</strong></summary>
 
 1. Is the agent running? Check the `agent` log line in your terminal — it should print `Application startup complete` and bind to `:8133`.
-2. Is `GEMINI_API_KEYS` set in `apps/agent/.env`?
+2. Is `GEMINI_API_KEY` set in `apps/agent/.env`?
 3. Run `cd apps/agent && uv run langgraph dev --port 8133` directly to see the actual error.
 
 </details>
