@@ -19,7 +19,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { Toaster, toast } from "sonner";
 import {
@@ -178,7 +177,6 @@ export interface LeadCopilotShellProps {
 export function LeadCopilotShell({ mode }: LeadCopilotShellProps) {
   const { agent } = useAgent();
   const { copilotkit } = useCopilotKit();
-  const router = useRouter();
 
   // ----- localStorage durability ----------------------------------------
   // Hydrate empty state from cache on first mount; persist whenever leads
@@ -231,28 +229,10 @@ export function LeadCopilotShell({ mode }: LeadCopilotShellProps) {
     }
   }, [agent, agent?.state]);
 
-  // Auto-promote chat-only mode to canvas mode the first time leads arrive
-  // (e.g. after `Import the leads from Notion.`). The seedRef seeds the
-  // baseline to the post-hydration count so a returning user with cached
-  // leads stays on / instead of getting redirected on every load — only
-  // fresh imports during a session trigger the navigation.
-  const seenLeadsRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (mode !== "chat") return;
-    if (!agent) return;
-    if (!hydratedRef.current) return;
-    const count = mergeAgentState(agent.state).leads.length;
-    if (seenLeadsRef.current === null) {
-      seenLeadsRef.current = count;
-      return;
-    }
-    if (count > 0 && seenLeadsRef.current === 0) {
-      seenLeadsRef.current = count;
-      router.push("/leads");
-      return;
-    }
-    seenLeadsRef.current = count;
-  }, [mode, agent, agent?.state, router]);
+  // (Auto-promote-to-canvas was removed: LeadStateMiddleware hydrates the
+  // agent's state from the local lead store on every fresh thread's first
+  // turn, so any unrelated prompt would fire the navigation. The chat
+  // header's "Open canvas (N leads)" link is the explicit signal instead.)
 
   // ----- Suggestion chips -----------------------------------------------
 
