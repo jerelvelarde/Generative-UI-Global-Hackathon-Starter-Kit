@@ -34,8 +34,10 @@ functions short-circuit to the preset and log a one-line warning.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
+import re
 from typing import Any
 
 from gemini_keys import build_gemini_chat_model, has_gemini_api_key
@@ -104,6 +106,86 @@ def _regen_system_prompt(*, avoid_ids: set[str]) -> str:
 # --------------------------- internal core ---------------------------------
 
 
+_JSON_FENCE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
+
+
+def _extract_text(response: Any) -> str:
+    """Pull plain text out of a LangChain message response."""
+    content = getattr(response, "content", response)
+    if isinstance(content, list):
+        # Multi-part responses (rare for plain text invoke); concatenate strings.
+        parts = [p.get("text", "") if isinstance(p, dict) else str(p) for p in content]
+        return "".join(parts)
+    return str(content)
+
+
+def _parse_json_loose(text: str) -> Any:
+    """Parse JSON from a model response, tolerating code fences + leading text."""
+    if not text:
+        raise ValueError("empty response")
+    # Try a fenced block first — most reliable when present.
+    match = _JSON_FENCE.search(text)
+    if match:
+        return json.loads(match.group(1))
+    # Otherwise grab the first '{' through the last matching '}'.
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError(f"no JSON object found in response: {text[:200]!r}")
+    return json.loads(text[start : end + 1])
+
+
+def _flat_schema_doc() -> str:
+    """Compact, human-readable schema doc embedded in the system prompt.
+
+    We don't ship Pydantic's full JSON Schema (with $defs refs) because the
+    Gemini function-calling adapter mangles it. A literal description that
+    enumerates fields + types + ranges gives Gemini a stable target.
+    """
+    return (
+        "Required JSON shape (all fields required unless marked optional):\n"
+        "{\n"
+        '  "goal": {\n'
+        '    "kind": "deep_focus" | "wind_down" | "creative" | "energetic",\n'
+        '    "description": string,\n'
+        '    "durationMin": int\n'
+        "  },\n"
+        '  "music": {\n'
+        '    "bpm": number,\n'
+        '    "intensity": number in [0, 1],\n'
+        '    "valence": number in [-1, 1],\n'
+        '    "aux": { "brownNoise": number in [0,1], "rain": number in [0,1] },\n'
+        '    "promptForGen": string\n'
+        "  },\n"
+        '  "visual": {\n'
+        '    "sceneId": "forest_cabin" | "warm_bedroom",\n'
+        '    "uniforms": {\n'
+        '      "colorTempK": number in [2700, 6500],\n'
+        '      "rainIntensity": number in [0,1],\n'
+        '      "fogDensity": number in [0,1],\n'
+        '      "windowGlow": number in [0,1],\n'
+        '      "timeOfDay": number in [0,1],\n'
+        '      "motionRate": number in [0,1],\n'
+        '      "vignette": number in [0,1]\n'
+        "    }\n"
+        "  },\n"
+        '  "levers": Lever[]  // 4-6 entries\n'
+        '  "evolution": { "phase": "ramp" | "sustain" | "wind_down" }\n'
+        "}\n\n"
+        "Lever shape:\n"
+        "{\n"
+        '  "id": snake_case string,\n'
+        '  "label": string,\n'
+        '  "kind": "slider" | "segmented" | "toggle",\n'
+        '  "description": string (optional),\n'
+        '  "bindTo": string (dot-path into MoodProfile),\n'
+        '  "range": { "min": number, "max": number, "default": number, "step": number (optional) }   // sliders only\n'
+        '  "options": [{ "value": string, "label": string }]                                          // segmented only\n'
+        '  "outOfBoundsAt": { "lo": number (optional), "hi": number (optional) }                      // optional; declare on exactly one lever\n'
+        "}\n"
+    )
+
+
 def _validate_or_preset(
     raw: Any,
     *,
@@ -149,18 +231,29 @@ def _structured_call(
         return PRESETS_BY_KIND.get(fallback_kind, DEEP_FOCUS_PRESET)
 
     llm = build_gemini_chat_model(model=model, temperature=0)
-    structured = llm.with_structured_output(MoodProfile, method="function_calling")
+    # JSON mode (instead of function_calling) sidesteps a langchain-google-genai
+    # bug where Pydantic v2 nested-model schemas with $defs refs crash the
+    # function-calling adapter. We ask Gemini for raw JSON, parse it ourselves.
+    schema_doc = _flat_schema_doc()
+    json_system = (
+        f"{system}\n\n"
+        f"OUTPUT FORMAT: respond with a SINGLE JSON object matching this "
+        f"schema. No markdown fences. No commentary. No tool calls. Just "
+        f"the raw JSON.\n\n{schema_doc}"
+    )
     messages = [
-        {"role": "system", "content": system},
+        {"role": "system", "content": json_system},
         {"role": "user", "content": user},
     ]
 
     last_exc: Exception | None = None
     for attempt in (1, 2):
         try:
-            result = structured.invoke(messages)
+            response = llm.invoke(messages)
+            raw_text = _extract_text(response)
+            parsed = _parse_json_loose(raw_text)
             return _validate_or_preset(
-                result, fallback_kind=fallback_kind, label=f"{label}/attempt-{attempt}"
+                parsed, fallback_kind=fallback_kind, label=f"{label}/attempt-{attempt}"
             )
         except Exception as exc:  # noqa: BLE001 — retry path
             last_exc = exc
