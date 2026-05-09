@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import {
   DndContext,
@@ -184,9 +184,23 @@ function DraggableLeadCard({
     id: lead.id,
     data: { status: lead.status },
   });
+  // Scroll into view whenever this card transitions into the selected
+  // state — that's the signal "Open in canvas" sends from the chat-side
+  // LeadMiniCard. Without it, selection is a faint ring on a card that
+  // may be in another column or scrolled below the fold.
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!selected) return;
+    const node = containerRef.current;
+    if (!node) return;
+    node.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [selected]);
   return (
     <div
-      ref={setNodeRef}
+      ref={(node) => {
+        setNodeRef(node);
+        containerRef.current = node;
+      }}
       {...attributes}
       {...listeners}
       style={{ opacity: isDragging ? 0 : 1 }}

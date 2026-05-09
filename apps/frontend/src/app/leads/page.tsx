@@ -492,8 +492,17 @@ function CanvasInner() {
         email={args.email}
         workshop={args.workshop}
         technical_level={args.technical_level}
+        // "Open in canvas" needs to be visibly different from the persistent
+        // selection ring. Clear any filter that hides the lead, set it as
+        // both selected (ring) and highlighted (2s pulse via usePulse), and
+        // let PipelineBoard scroll it into view.
         onSelect={(id) =>
-          updateState((prev) => ({ ...prev, selectedLeadId: id }))
+          updateState((prev) => ({
+            ...prev,
+            filter: emptyFilter,
+            selectedLeadId: id,
+            highlightedLeadIds: [id],
+          }))
         }
       />
     ),
