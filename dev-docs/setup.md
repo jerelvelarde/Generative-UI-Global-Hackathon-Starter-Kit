@@ -92,7 +92,7 @@ To use a different MCP server (Linear, Slack, GitHub, …), edit `apps/agent/src
 
 If you can't or don't want to use `npx copilotkit@latest init`:
 
-1. Get a license token: `npx copilotkit license -n hackathon-kit` — paste into `.env` as `COPILOTKIT_LICENSE_TOKEN`.
+1. Get a license token: `npx copilotkit@latest license create` — paste into `.env` as `COPILOTKIT_LICENSE_TOKEN`.
 2. Bring up infra:
    ```bash
    docker compose up -d --wait
