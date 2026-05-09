@@ -31,6 +31,8 @@ import { z } from "zod";
 
 import { useHearthStore } from "@/lib/hearth/store";
 import { Lever, MoodProfile, SceneId } from "@/lib/hearth/schema";
+import { useOutOfBoundsDetector } from "@/lib/hearth/genui/outOfBounds";
+import { useRegenWiring } from "@/lib/hearth/genui/regenerate";
 
 /**
  * Convert an agent-friendly leverId into the dot-path the store mutates.
@@ -79,6 +81,8 @@ export function HearthFrontendTools() {
   const swapScene = useHearthStore((s) => s.swapScene);
 
   useAgentProfileBridge();
+  useRegenWiring();
+  useOutOfBoundsDetector();
 
   useFrontendTool({
     name: "updateLeverValue",
