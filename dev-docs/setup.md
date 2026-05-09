@@ -1,6 +1,6 @@
 # Setup
 
-Detailed setup for the kit — prerequisites, API keys, Notion configuration, and a manual setup path if you can't use the CopilotKit CLI.
+Detailed setup for the kit — prerequisites, API keys, Notion configuration, and a long-form walkthrough of the run-locally steps.
 
 ## Prerequisites
 
@@ -9,9 +9,31 @@ Detailed setup for the kit — prerequisites, API keys, Notion configuration, an
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) for Python deps
 - Docker (required for Intelligence — see [Removing Intelligence](#removing-intelligence-docker-free-mode) for the no-Docker path)
 - A package manager: `pnpm` (recommended), `npm`, `yarn`, or `bun`
-- API keys: Gemini (required), Notion integration token (required for the lead-form demo), CopilotKit license (issued by the CLI or `npm run license`)
+- API keys: Gemini (required), Notion integration token (required for the lead-form demo), CopilotKit license (issued by `npx copilotkit@latest license`)
 
 > Lock files are gitignored so you can use any package manager. Generate one locally with your tool of choice.
+
+---
+
+## Get a CopilotKit Intelligence license (required)
+
+Intelligence persists threads, runs the agent runtime, and gates the kit's hosted features. You need a license token before `npm run dev` will boot.
+
+**Path A — CLI (recommended).**
+
+```bash
+npx copilotkit@latest license
+```
+
+Follow the prompt; the CLI prints a token. Paste it into `.env` at the repo root:
+
+```bash
+COPILOTKIT_LICENSE_TOKEN=ck_...
+```
+
+**Path B — dashboard.** If you can't run `npx` (corp network, sandboxed shell, etc.), sign in at [dashboard.operations.copilotkit.ai/sign-in](https://dashboard.operations.copilotkit.ai/sign-in), issue a token from the UI, and paste it into `.env` as above.
+
+> Threads silently fail to persist without `COPILOTKIT_LICENSE_TOKEN`. The pre-flight check (`scripts/check-env.sh`) will flag a missing token before `npm run dev` boots.
 
 ---
 
@@ -88,24 +110,13 @@ To use a different MCP server (Linear, Slack, GitHub, …), edit `apps/agent/src
 
 ---
 
-## Manual setup (alternative to the CLI)
+## Notes on the run-locally flow
 
-If you can't or don't want to use `npx @copilotkit/cli@latest init`:
+A few things the [Run it locally](../README.md#run-it-locally) quickstart elides:
 
-1. Get a license token: `npx copilotkit license -n hackathon-kit` — paste into `.env` as `COPILOTKIT_LICENSE_TOKEN`.
-2. Bring up infra:
-   ```bash
-   docker compose up -d --wait
-   ```
-   This pulls `ghcr.io/copilotkit/intelligence/composite` and starts Postgres + Redis alongside.
-3. Copy env templates: `cp .env.example .env` and `cp apps/agent/.env.example apps/agent/.env`. Paste your keys.
-4. Install + run:
-   ```bash
-   npm install
-   npm run dev
-   ```
-
-The intelligence env vars (`INTELLIGENCE_API_URL`, `INTELLIGENCE_GATEWAY_WS_URL`, `INTELLIGENCE_API_KEY`) match `deployment/docker-compose.yml`'s defaults — no manual editing needed for local dev.
+- **Docker is implicit.** `npm run dev` calls `npm run dev:infra` first, which runs `docker compose up -d --wait` against `deployment/docker-compose.yml`. That pulls `ghcr.io/copilotkit/intelligence/composite` and brings up Postgres + Redis alongside. If you'd rather bring infra up yourself, run `npm run dev:infra` once and then `npm run dev:ui` / `dev:bff` / `dev:agent` separately.
+- **Intelligence env vars match the compose defaults.** `INTELLIGENCE_API_URL`, `INTELLIGENCE_GATEWAY_WS_URL`, and `INTELLIGENCE_API_KEY` in `.env.example` line up with `deployment/docker-compose.yml` — no manual editing needed for local dev.
+- **License vs Gemini.** Both are required. The license is a one-time fetch (`npx copilotkit@latest license`). The Gemini key has to land in **both** `.env` (BFF + Next.js) and `apps/agent/.env` (agent's own dotenv).
 
 ---
 

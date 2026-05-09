@@ -10,5 +10,4 @@
 | `npm run dev:bff` | CopilotKit runtime BFF only (Hono, port 4010) |
 | `npm run dev:agent` | Agent only (`langgraph dev`, port 8133) |
 | `npm run dev:mcp` | MCP server only (port 3011) |
-| `npm run license` | Issue a CopilotKit license token |
 | `npm run build` | Production build |

@@ -21,7 +21,6 @@
     "install:agent": "cd apps/agent && uv sync",
     "install:mcp": "npm install --workspace mcp",
     "postinstall": "npm run install:agent",
-    "license": "npx copilotkit license -n hackathon-kit",
     "build": "npm run build --workspace frontend",
     "start": "npm run start --workspace frontend",
     "lint": "npm run lint --workspace frontend"
