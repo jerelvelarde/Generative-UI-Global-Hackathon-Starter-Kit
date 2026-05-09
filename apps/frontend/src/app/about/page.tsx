@@ -54,7 +54,7 @@ const pillars = [
     icon: Rocket,
     href: "https://ai.google.dev/gemini-api/docs",
     blurb:
-      "Gemini 3.1 Flash-Lite is Google's high-volume workhorse — fast, cheap, and tool-calling-capable. Default for chat. Drop in an API key from Google AI Studio, restart, and you're done. Switch to Pro, OpenAI, Anthropic, or Ollama with a one-line edit.",
+      "Gemini 3 Flash Preview is Google's balanced Gemini 3 model — fast, scalable, and tool-calling-capable. Default for chat. Drop in an API key from Google AI Studio, restart, and you're done. Switch to Gemini 3.1 Pro Preview, OpenAI, Anthropic, or Ollama with a one-line edit.",
   },
   {
     name: "A2UI",

@@ -39,7 +39,7 @@ COPILOTKIT_LICENSE_TOKEN=ck_...
 
 ## Get a Gemini API key (required)
 
-This kit defaults to **Gemini 3.1 Flash-Lite**. You need a Gemini API key for chat to work.
+This kit defaults to **Gemini 3 Flash Preview**. You need a Gemini API key for chat to work.
 
 1. Go to [aistudio.google.com](https://aistudio.google.com) and sign in with a Google Account.
 2. In the left sidebar, click **Get API key**.

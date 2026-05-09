@@ -28,7 +28,7 @@ Intelligence isn't running. Check:
 <details>
 <summary><strong>Gemini quota exceeded</strong></summary>
 
-Free tier is generous but not infinite. Either wait, switch to a paid Gemini key, or temporarily swap the model id in `apps/agent/src/runtime.py` (`_gemini_llm`) to `gemini-3-flash` (frontier-class quality) or `gemini-3-pro-preview` (more reasoning, slower) — each tier has its own quota.
+Free tier is generous but not infinite. Either wait, switch to a paid Gemini key, or temporarily swap the model id in `apps/agent/src/runtime.py` (`_gemini_llm`) to `gemini-3-flash-preview` (balanced speed/quality) or `gemini-3.1-pro-preview` (more reasoning, slower) — each tier has its own quota.
 
 </details>
 
