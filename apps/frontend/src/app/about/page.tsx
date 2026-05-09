@@ -89,7 +89,7 @@ const pillars = [
 const quickstart = [
   {
     title: "Run the CLI",
-    body: "npx @copilotkit/cli@latest init",
+    body: "npx copilotkit@latest init",
     note: "Select Intelligence when prompted.",
   },
   {

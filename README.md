@@ -97,7 +97,7 @@ The kit's `apps/mcp/` package is an MCP server built with [`mcp-use`](https://ma
 
 ## Run it locally
 
-1. Run `npx @copilotkit/cli@latest init` and select **Intelligence** when prompted.
+1. Run `npx copilotkit@latest init` and select **Intelligence** when prompted.
 2. Drop a Gemini API key into **both** `.env` and `apps/agent/.env`. Then follow [Notion setup](#notion-setup) below for the integration token + database id.
 3. Run `npm install` then `npm run dev` (or `npm run dev:full` to include the MCP server).
 
