@@ -40,7 +40,13 @@ import os
 import re
 from typing import Any
 
-from gemini_keys import build_gemini_chat_model, has_gemini_api_key
+# Try sibling-package import first (works under `langgraph dev` and uv via
+# `from src.hearth.architect import …`), fall back to flat-path import for
+# script execution with `PYTHONPATH=src`.
+try:
+    from ..gemini_keys import build_gemini_chat_model, has_gemini_api_key
+except (ImportError, ValueError):
+    from gemini_keys import build_gemini_chat_model, has_gemini_api_key  # type: ignore[no-redef]
 
 from .presets import DEEP_FOCUS_PRESET, PRESETS_BY_KIND, WIND_DOWN_PRESET
 from .schema import GoalKind, MoodProfile

@@ -1,22 +1,22 @@
 """LangGraph entry point for `langgraph dev --port 8133`.
 
-Wires:
+Wires the **Hearth Mood Architect** agent:
 - A switchable runtime (Gemini Flash-Lite + deepagents | Gemini Flash-Lite + react |
-  Claude Sonnet 4.6 + react) selected by `AGENT_RUNTIME`. See
-  `src/runtime.py` and the README's "Switching to a different model".
-- Notion-MCP-backed backend tools (always present; Notion read goes through
-  the official `@notionhq/notion-mcp-server` via mcp-use)
-- TimingMiddleware (per-turn wall-time logging — see `src/timing.py`)
-- LeadStateMiddleware + CopilotKitMiddleware for canvas state + AG-UI
+  Claude Sonnet 4.6 + react) selected by `AGENT_RUNTIME`.
+- Hearth backend tools — `classify_mood_for_goal` + `regenerate_mood_profile`
+  — exposed via `make_hearth_backend_tools()`. These mutate `state.profile`
+  via Command(update=) so STATE_SNAPSHOT carries the new MoodProfile to the
+  frontend without a separate setProfile call.
+- TimingMiddleware + MoodStateMiddleware + CopilotKitMiddleware (see
+  `src/runtime.py` for the chain).
 
-Frontend tools (`createItem`, `setItemName`, `setProjectField1`, etc.) are
-declared on the React side via `useFrontendTool({ name, parameters,
-handler })` in `src/app/page.tsx`. The runtime forwards those declarations
-into the agent's tool list at run time, so we deliberately do NOT include
-the Python `frontend_tool_stubs` here — adding them would cause Gemini to
-reject the request with "Duplicate function declaration found: <name>".
-The Python stubs in `agent/src/canvas.py` exist purely as documentation of
-the contract the frontend is expected to honor.
+Frontend tools (`updateLeverValue`, `addLever`, `swapScene`,
+`regenerateMoodProfile`) are declared on the React side via
+`useFrontendTool` in `apps/frontend/src/components/copilot/hearth-tools.tsx`.
+The runtime forwards those declarations into the agent's tool list at run
+time, so we deliberately do NOT include Python frontend stubs here —
+adding them would cause Gemini to reject the request with "Duplicate
+function declaration found: <name>".
 """
 
 from __future__ import annotations
@@ -26,9 +26,8 @@ import os
 from dotenv import load_dotenv
 
 from src.gemini_keys import get_gemini_api_keys, has_gemini_api_key
+from src.hearth.backend_tools import make_hearth_backend_tools
 from src.intelligence_cleanup import wipe_orphan_threads
-from src.lead_store import boot_status as _lead_store_boot_status
-from src.notion_tools import load_notion_tools
 from src.prompts import build_system_prompt
 from src.runtime import build_graph
 
@@ -46,29 +45,26 @@ load_dotenv()
 wipe_orphan_threads()
 
 
-def _format_integration_status() -> str:
-    """Run the boot-time lead-store health check and format a status string.
-
-    Reports whichever store is active — Notion when both NOTION_TOKEN
-    and NOTION_LEADS_DATABASE_ID are set, the bundled local JSON
-    otherwise. Logs a one-liner so `npm run dev` tails show the active
-    source clearly. The returned string is interpolated into the system
-    prompt so the agent can refuse-with-reason when something is off
-    rather than silently returning an empty board.
-    """
-    try:
-        line = _lead_store_boot_status()
-    except Exception as e:  # noqa: BLE001 - never block agent boot on this
-        print(f"[lead_store] FAILED: {e}", flush=True)
-        return f"error: lead_store boot_status raised: {e}"
-
-    print(f"[lead_store] {line}", flush=True)
-    return line
-
-
 # Stub-key warnings for the active runtime live closer to the runtime selector.
 # The Gemini runtimes still warn here so the message is loud at boot.
-_AGENT_RUNTIME = os.getenv("AGENT_RUNTIME", "gemini-flash-deep")
+_AGENT_RUNTIME = os.getenv("AGENT_RUNTIME", "gemini-flash-react")
+
+# deepagents `create_deep_agent` calls `apply_provider_profile(spec)` which
+# expects a string model id, not a chat-model instance. We pass instances so
+# that backup-key fallbacks (gemini_keys.build_gemini_chat_model) survive.
+# When AGENT_RUNTIME=gemini-flash-deep and we have keys configured, swap to
+# gemini-flash-react which accepts model instances. The behavior the user
+# actually cares about (Hearth Mood Architect emitting MoodProfiles via
+# tool calls) is identical between the two runtimes.
+if _AGENT_RUNTIME == "gemini-flash-deep" and len(get_gemini_api_keys()) >= 1:
+    print(
+        "[runtime] AGENT_RUNTIME=gemini-flash-deep is incompatible with "
+        "backup-key fallbacks; using gemini-flash-react instead. Set "
+        "AGENT_RUNTIME=gemini-flash-react in .env to silence this notice.",
+        flush=True,
+    )
+    _AGENT_RUNTIME = "gemini-flash-react"
+
 print(f"[runtime] AGENT_RUNTIME={_AGENT_RUNTIME}", flush=True)
 
 _gemini_keys = get_gemini_api_keys()
@@ -87,11 +83,21 @@ elif _AGENT_RUNTIME.startswith("gemini-"):
     )
 
 
-backend_tools = load_notion_tools()
+# Hearth backend tools — classify_mood_for_goal + regenerate_mood_profile.
+# These wrap architect.py's Gemini calls and emit Command(update={"profile": ...})
+# so MoodStateMiddleware ships the new profile to the frontend via STATE_SNAPSHOT.
+# Frontend tools (updateLeverValue, addLever, swapScene, regenerateMoodProfile)
+# are forwarded automatically by CopilotKitMiddleware — see hearth-tools.tsx.
+backend_tools = make_hearth_backend_tools()
+print(
+    f"[hearth] backend tools loaded: {[t.name for t in backend_tools]}",
+    flush=True,
+)
 
 
-_integration_status = _format_integration_status()
-SYSTEM_PROMPT = build_system_prompt(_integration_status)
+# build_system_prompt() takes a legacy integration_status arg from the
+# lead-triage starter; the Hearth prompt ignores it.
+SYSTEM_PROMPT = build_system_prompt("")
 
 
 _use_noop = (
