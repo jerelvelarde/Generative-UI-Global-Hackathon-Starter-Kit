@@ -39,6 +39,9 @@ CANVAS_STATE_SHAPE = (
     "- selectedLeadId: string | null\n"
     "- header: { title: string, subtitle: string }\n"
     "- sync: { databaseId: string, databaseTitle: string, syncedAt: string | null }\n"
+    "- followups: Followup[]    // shared follow-up tasks (A2UI demo)\n"
+    "  - Followup = { id: string, text: string,\n"
+    "                  status: 'pending' | 'done', leadId?: string }\n"
 )
 
 
@@ -82,6 +85,18 @@ FRONTEND_TOOLS = (
     "  draft). DO NOT call post_lead_comment in the SAME turn as\n"
     "  renderEmailDraft — wait for the user's approval to come back through\n"
     "  the chat as a follow-up message, then post.\n"
+    "- manage_followups({followups: Followup[]}): A2UI shared-state tool.\n"
+    "  Both you and the user write to state.followups; the user can also\n"
+    "  toggle / add / remove items via the rendered list. Pass the FULL\n"
+    "  list every call (each side's edit overwrites the array, so partial\n"
+    "  patches would silently drop user-side adds). Each item must include\n"
+    "  status ('pending' | 'done'); leadId is optional and links the item\n"
+    "  to a specific lead. Use this when the user asks to plan / schedule\n"
+    "  / track follow-ups.\n"
+    "- renderFollowups({}): mount the live shared follow-ups list inline\n"
+    "  in chat. No args — it reads state.followups directly. Call this\n"
+    "  AFTER manage_followups so the user sees the result, or any time\n"
+    "  the user asks to review the current follow-up list.\n"
 )
 
 
@@ -103,6 +118,15 @@ LEAD_TRIAGE_PROMPT = (
     "  arguments + result. This means you can call backend tools (like the\n"
     "  Notion MCP read tools) freely and the UI will reflect the activity\n"
     "  without us writing a per-tool renderer.\n\n"
+    "TWO LAYOUTS:\n"
+    "- Chat-only mode (the default landing at `/`): centered chat with no\n"
+    "  canvas behind it. Use renderLeadMiniCard / renderWorkshopDemand /\n"
+    "  renderFollowups to give the user a visual answer inline. The user\n"
+    "  can click 'Open canvas' in the header to expand to app mode.\n"
+    "- App mode (at `/leads`): kanban board, donut, demand bars, lead\n"
+    "  detail panel + sidebar chat. The user reaches it manually from the\n"
+    "  chat header. Drag-drop on a card moves it to a different status\n"
+    "  column and persists via commitLeadEdit.\n\n"
     "INTERACTION POLICY:\n"
     "- The default canvas layout is a kanban grouped by Status (Not started\n"
     "  / In progress / Done) with a workshop-demand chart above it. Drag-drop\n"

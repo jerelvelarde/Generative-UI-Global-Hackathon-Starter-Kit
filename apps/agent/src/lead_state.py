@@ -83,6 +83,13 @@ class _Segment(TypedDict, total=False):
     leadIds: list[str]
 
 
+class _Followup(TypedDict, total=False):
+    id: str
+    text: str
+    status: str  # "pending" | "done"
+    leadId: str
+
+
 def _replace(_left: Any, right: Any) -> Any:
     """LangGraph reducer that always takes the most recent value.
 
@@ -107,6 +114,7 @@ class LeadCanvasState(AgentState):
     selectedLeadId: NotRequired[Annotated[Optional[str], _replace]]
     header: NotRequired[Annotated[_Header, _replace]]
     sync: NotRequired[Annotated[_SyncMeta, _replace]]
+    followups: NotRequired[Annotated[list[_Followup], _replace]]
 
 
 class LeadStateMiddleware(AgentMiddleware[LeadCanvasState, Any]):  # type: ignore[type-arg]

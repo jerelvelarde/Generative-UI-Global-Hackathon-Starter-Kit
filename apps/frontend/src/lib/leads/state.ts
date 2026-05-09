@@ -18,6 +18,7 @@ export const initialState: AgentState = {
     subtitle: "Live from Notion",
   },
   sync: { databaseId: "", databaseTitle: "", syncedAt: null },
+  followups: [],
 };
 
 export function isFilterEmpty(f: LeadFilter): boolean {

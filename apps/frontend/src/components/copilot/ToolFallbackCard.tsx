@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Check, Loader2, Wrench } from "lucide-react";
+import { useMemo } from "react";
 
 export interface ToolFallbackCardProps {
   name: string;
@@ -9,16 +10,28 @@ export interface ToolFallbackCardProps {
   parameters?: unknown;
 }
 
+/**
+ * Open Generative UI catch-all renderer (the threads-demo "ToolReasoning"
+ * pattern, ported). Any tool the agent invokes that doesn't have a
+ * dedicated render slot lands here — backend Notion calls, health checks,
+ * planner dispatches, anything new the user adds.
+ *
+ * Native <details> collapsible so it's keyboard accessible and degrades
+ * cleanly. The card renders running / complete states with distinct
+ * iconography (spinning wrench → green check) so the user can see at a
+ * glance what the agent is doing.
+ */
 export function ToolFallbackCard({
   name,
   status,
   result,
   parameters,
 }: ToolFallbackCardProps) {
-  const [open, setOpen] = useState(false);
-  const dotColor = status === "complete" ? "#BEC2FF" : "#F4D35E";
+  const isRunning = status === "executing" || status === "inProgress";
+  const isComplete = status === "complete";
+
   const payload = useMemo(() => {
-    const value = status === "complete" ? result ?? parameters : parameters;
+    const value = isComplete ? result ?? parameters : parameters;
     if (value === undefined || value === null) return "";
     if (typeof value === "string") {
       try {
@@ -32,35 +45,45 @@ export function ToolFallbackCard({
     } catch {
       return String(value);
     }
-  }, [parameters, result, status]);
+  }, [isComplete, parameters, result]);
 
   return (
-    <div className="my-2 max-w-[420px] rounded-xl border border-[#DBDBE5] bg-white p-3 text-sm shadow-sm">
-      <div className="flex items-center gap-2">
+    <details
+      className="group my-2 max-w-[460px] rounded-xl border border-[#DBDBE5] bg-white text-sm shadow-sm"
+      // Auto-open while running so the user can see what the agent is doing
+      open={isRunning}
+    >
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 [&::-webkit-details-marker]:hidden">
         <span
-          className="size-2 shrink-0 rounded-full"
-          style={{ background: dotColor }}
+          className={`grid size-5 shrink-0 place-items-center rounded-full ${
+            isComplete
+              ? "bg-[#85ECCE] text-foreground"
+              : "bg-[#EDEDF5] text-muted-foreground"
+          }`}
           aria-hidden
-        />
-        <span className="font-mono text-[12px] text-foreground">{name}</span>
-        <span className="ml-auto font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-          {status}
-        </span>
-      </div>
-      {payload ? (
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="mt-2 inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground hover:text-foreground"
         >
-          {open ? "hide" : "show"} payload
-        </button>
+          {isComplete ? (
+            <Check size={11} strokeWidth={3} />
+          ) : isRunning ? (
+            <Loader2 size={11} className="animate-spin" />
+          ) : (
+            <Wrench size={11} />
+          )}
+        </span>
+        <span className="truncate font-mono text-[12px] text-foreground">
+          {name}
+        </span>
+        <span className="ml-auto font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+          {isComplete ? "done" : isRunning ? "running" : status}
+        </span>
+      </summary>
+      {payload ? (
+        <div className="border-t border-[#EDEDF5] px-3 py-2">
+          <pre className="max-h-48 overflow-auto rounded-md bg-[#F7F7F9] p-2 font-mono text-[11px] leading-snug text-foreground">
+            {payload}
+          </pre>
+        </div>
       ) : null}
-      {open && payload ? (
-        <pre className="mt-2 max-h-48 overflow-auto rounded-md bg-[#F7F7F9] p-2 font-mono text-[11px] leading-snug text-foreground">
-          {payload}
-        </pre>
-      ) : null}
-    </div>
+    </details>
   );
 }

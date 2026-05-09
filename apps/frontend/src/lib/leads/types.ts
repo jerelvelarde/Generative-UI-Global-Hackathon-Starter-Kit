@@ -77,6 +77,17 @@ export interface SyncMeta {
   syncedAt: string | null;
 }
 
+// Follow-up tasks the user/agent can both edit. This is the canonical
+// shared-state (A2UI) demo from the threads-demo starter, ported to the
+// lead-form domain — instead of generic todos, items are scoped to a lead
+// (or unscoped for general next-actions).
+export interface Followup {
+  id: string;
+  text: string;
+  status: "pending" | "done";
+  leadId?: string;
+}
+
 export interface AgentState {
   leads: Lead[];
   filter: LeadFilter;
@@ -84,6 +95,7 @@ export interface AgentState {
   selectedLeadId: string | null;
   header: { title: string; subtitle: string };
   sync: SyncMeta;
+  followups: Followup[];
 }
 
 // Mirrors the Python `NotionHealth` TypedDict in

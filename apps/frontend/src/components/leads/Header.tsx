@@ -1,6 +1,7 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { MessageCircle, RefreshCw } from "lucide-react";
 import type { SyncMeta } from "@/lib/leads/types";
 
 interface HeaderProps {
@@ -28,6 +29,14 @@ export function Header({
         <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
       </div>
       <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-wide text-muted-foreground">
+        <Link
+          aria-label="Back to chat-only mode"
+          href="/"
+          className="inline-flex items-center gap-1.5 rounded-md border border-[#DBDBE5] bg-white px-2 py-1 normal-case tracking-normal text-foreground transition-colors hover:bg-[#F5F5FA]"
+        >
+          <MessageCircle size={12} />
+          <span>Chat only</span>
+        </Link>
         <span className="tabular-nums">
           <span className="font-semibold text-foreground">{visibleLeads}</span>
           {visibleLeads !== totalLeads ? (
