@@ -15,6 +15,28 @@ Detailed setup for the kit — prerequisites, API keys, Notion configuration, an
 
 ---
 
+## Get a CopilotKit Intelligence license (required)
+
+Intelligence persists threads, runs the agent runtime, and gates the kit's hosted features. You need a license token before `npm run dev` will boot.
+
+**Path A — CLI (recommended).**
+
+```bash
+npx copilotkit@latest license
+```
+
+Follow the prompt; the CLI prints a token. Paste it into `.env` at the repo root:
+
+```bash
+COPILOTKIT_LICENSE_TOKEN=ck_...
+```
+
+**Path B — dashboard.** If you can't run `npx` (corp network, sandboxed shell, etc.), sign in at [dashboard.operations.copilotkit.ai/sign-in](https://dashboard.operations.copilotkit.ai/sign-in), issue a token from the UI, and paste it into `.env` as above.
+
+> Threads silently fail to persist without `COPILOTKIT_LICENSE_TOKEN`. The pre-flight check (`scripts/check-env.sh`) will flag a missing token before `npm run dev` boots.
+
+---
+
 ## Get a Gemini API key (required)
 
 This kit defaults to **Gemini 3.1 Flash-Lite**. You need a Gemini API key for chat to work.
