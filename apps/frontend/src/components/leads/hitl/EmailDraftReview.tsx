@@ -192,7 +192,7 @@ export function EmailDraftReview({
           className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
         >
           <Check className="size-3" />
-          Approve &amp; queue
+          Approve &amp; post comment
         </button>
         {onRegenerate ? (
           <button

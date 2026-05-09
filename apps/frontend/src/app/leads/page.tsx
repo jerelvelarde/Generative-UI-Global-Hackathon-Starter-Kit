@@ -310,7 +310,7 @@ function LiveEmailDraft({ args }: { args: LiveEmailDraftArgs }) {
           `The user approved the outreach email for ${lead.name} (id ${lead.id}). ` +
             `Final subject: ${JSON.stringify(next.subject)}. ` +
             `Final body: ${JSON.stringify(next.body)}. ` +
-            `Queue it into the send queue.`,
+            `Call post_outreach_comment with that exact subject and body.`,
         )
       }
       onRegenerate={() =>
