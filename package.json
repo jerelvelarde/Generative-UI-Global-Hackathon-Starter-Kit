@@ -17,7 +17,7 @@
     "dev:full": "npm run dev:infra && npx concurrently -k -n ui,bff,agent,mcp -c blue,cyan,green,magenta \"npm run dev:ui\" \"npm run dev:bff\" \"npm run dev:agent\" \"npm run dev:mcp\"",
     "dev:ui": "npm run dev --workspace frontend",
     "dev:bff": "npm run dev --workspace bff",
-    "dev:agent": "cd apps/agent && py -3 -m uv run langgraph dev --port 8133",
+    "dev:agent": "cd apps/agent && py -3 -m uv run langgraph dev --port 8133 --no-browser",
     "dev:mcp": "npm run dev --workspace mcp",
     "install:agent": "cd apps/agent && py -3 -m uv sync",
     "install:mcp": "npm install --workspace mcp",
