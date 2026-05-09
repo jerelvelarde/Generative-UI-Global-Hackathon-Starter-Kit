@@ -46,7 +46,7 @@ import { TierDonut } from "@/components/leads/charts/TierDonut";
 import { ScoreDistribution } from "@/components/leads/charts/ScoreDistribution";
 import { RubricProposalCard } from "@/components/leads/hitl/RubricProposalCard";
 import { SendQueueModal } from "@/components/leads/hitl/SendQueueModal";
-import { EmailDraftCard } from "@/components/leads/inline/EmailDraftCard";
+import { EmailDraftReview } from "@/components/leads/hitl/EmailDraftReview";
 
 function ClientOnly({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -302,18 +302,30 @@ function LiveEmailDraft({ args }: { args: LiveEmailDraftArgs }) {
     role: args.leadRole ?? "",
   };
   return (
-    <EmailDraftCard
+    <EmailDraftReview
       lead={lead}
       draft={args.draft}
-      variant="compact"
+      onApprove={(next) =>
+        injectPrompt(
+          `The user approved the outreach email for ${lead.name} (id ${lead.id}). ` +
+            `Final subject: ${JSON.stringify(next.subject)}. ` +
+            `Final body: ${JSON.stringify(next.body)}. ` +
+            `Queue it into the send queue.`,
+        )
+      }
       onRegenerate={() =>
         injectPrompt(
           `Regenerate the outreach email for ${lead.name} (id ${lead.id}).`,
         )
       }
-      onQueue={() =>
+      onDiscard={() =>
         injectPrompt(
-          `Queue the email for ${lead.name} (id ${lead.id}) into the send queue.`,
+          `The user discarded the outreach email draft for ${lead.name} (id ${lead.id}). Do not queue or send.`,
+        )
+      }
+      onToneChange={(tone) =>
+        injectPrompt(
+          `Rewrite the outreach email for ${lead.name} (id ${lead.id}) in a ${tone} tone.`,
         )
       }
     />
