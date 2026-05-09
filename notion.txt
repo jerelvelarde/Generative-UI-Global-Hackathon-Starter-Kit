@@ -1,0 +1,37 @@
+SF Global Hack [copilotkit.notion.site/sf-global-hack]
+AI Tinkerers
+Empty
+Empty
+Empty
+Welcome! 
+Wifi: 989WiFi / Access989!
+Handbook
+https://sf.aitinkerers.org/hackathons/h_FZX7ihFWcHA/handbook
+Kickoff Video
+https://www.youtube.com/watch?v=6831vjw7Tao
+Starter Repo
+https://go.copilotkit.ai/GenUITemplate
+Gemini  — $25 credits
+https://trygcp.dev/claim/gen-ui-sf
+CopilotKit Intelligence Token
+npx copilotkit@latest license
+​
+LangSmith – $50 credits 
+AI Tinkerers Generative UI Hackathon | Resources from LangChain 
+Daytona — $100 credits
+Coupon code: DAYTONA_HACKATHON_WEEKEND_E782IBFW
+How to redeem:
+1. Create a Daytona account at
+https://app.daytona.io
+2. Go to the Billing Dashboard
+3. Paste the code and click Redeem
+Submissions
+AI Tinkerers Hackathon Portal by 6 PM local time
+As part of the submission flow, every team is also asked to create a social media post featuring their project and tagging AIT + the sponsor companies (tags provided in the portal).
+Judging & Prizes
+Judging happens globally after the hackathon. Winners will be contacted next week.
+Global 1st Place — Mac Minis for the entire team + $5,000 in GCP
+Credits + $2,000 in LangSmith Credits
+Global 2nd Place — Meta Ray-Bans for the entire team + $5,000 in GCP
+Credits + $1,000 in LangSmith Credits
+Global 3rd Place — $5,000 in GCP Credits + $700 in LangSmith Credits
