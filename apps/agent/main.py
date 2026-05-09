@@ -25,6 +25,7 @@ import os
 
 from dotenv import load_dotenv
 
+from src.gemini_keys import get_gemini_api_keys, has_gemini_api_key
 from src.intelligence_cleanup import wipe_orphan_threads
 from src.lead_store import boot_status as _lead_store_boot_status
 from src.notion_tools import load_notion_tools
@@ -32,7 +33,7 @@ from src.prompts import build_system_prompt
 from src.runtime import build_graph
 
 
-# Load .env early so GEMINI_API_KEY / NOTION_TOKEN / ANTHROPIC_API_KEY are visible.
+# Load .env early so GEMINI_API_KEYS / NOTION_TOKEN / ANTHROPIC_API_KEY are visible.
 load_dotenv()
 
 
@@ -70,15 +71,18 @@ def _format_integration_status() -> str:
 _AGENT_RUNTIME = os.getenv("AGENT_RUNTIME", "gemini-flash-deep")
 print(f"[runtime] AGENT_RUNTIME={_AGENT_RUNTIME}", flush=True)
 
-_gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
-if _AGENT_RUNTIME.startswith("gemini-") and (
-    not _gemini_key or _gemini_key.startswith("stub")
-):
+_gemini_keys = get_gemini_api_keys()
+if _AGENT_RUNTIME.startswith("gemini-") and not _gemini_keys:
     print(
-        "\n  GEMINI_API_KEY is unset or a stub.\n"
+        "\n  GEMINI_API_KEYS / GEMINI_API_KEY is unset or a stub.\n"
         "   The agent will boot but chat will fail on the first turn.\n"
         "   Get a key at https://aistudio.google.com → Get API key,\n"
-        "   then set GEMINI_API_KEY in v2/.env and v2/agent/.env.\n",
+        "   then set GEMINI_API_KEYS in .env and apps/agent/.env.\n",
+        flush=True,
+    )
+elif _AGENT_RUNTIME.startswith("gemini-"):
+    print(
+        f"[runtime] Gemini keyring loaded with {len(_gemini_keys)} key(s)",
         flush=True,
     )
 
@@ -92,11 +96,11 @@ SYSTEM_PROMPT = build_system_prompt(_integration_status)
 
 _use_noop = (
     _AGENT_RUNTIME.startswith("gemini-")
-    and (not _gemini_key or _gemini_key.startswith("stub"))
+    and not has_gemini_api_key()
 )
 if _use_noop:
     print(
-        "\n[runtime] GEMINI_API_KEY missing or stub — using noop fallback graph.\n"
+        "\n[runtime] Gemini API key missing or stub — using noop fallback graph.\n"
         "          Chat will reply with a setup pointer instead of hanging.\n",
         flush=True,
     )
