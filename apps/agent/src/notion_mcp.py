@@ -260,6 +260,23 @@ def mcp_create_page(
     )
 
 
+def mcp_create_comment(page_id: str, text: str) -> Dict[str, Any]:
+    """Post a comment on a Notion page via `API-create-a-comment`.
+
+    Wraps the page_id + a single rich_text run into the shape Notion's
+    REST `/comments` endpoint expects. Returns the Comment object.
+    """
+    return _extract_payload(
+        _run_sync(_call_tool_async(
+            "API-create-a-comment",
+            {
+                "parent": {"page_id": page_id},
+                "rich_text": [{"type": "text", "text": {"content": text}}],
+            },
+        ))
+    )
+
+
 def has_notion_token() -> bool:
     """Sentinel for callers that want to short-circuit before spawning npx."""
     return _has_token()

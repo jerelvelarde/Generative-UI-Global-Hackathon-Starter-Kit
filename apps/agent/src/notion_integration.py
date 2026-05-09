@@ -34,6 +34,7 @@ from dotenv import load_dotenv
 
 from .notion_mcp import (
     has_notion_token,
+    mcp_create_comment,
     mcp_create_page,
     mcp_fetch_data_source,
     mcp_fetch_database_schema,
@@ -538,3 +539,27 @@ def insert_lead(
         "url": (page or {}).get("url", ""),
         **(lead or {}),
     }
+
+
+def post_lead_comment(
+    page_id: str, subject: str, body: str
+) -> Optional[Dict[str, Any]]:
+    """Post an outreach email as a Notion comment on the lead's page.
+
+    Notion's comment rich_text has a 2000-char limit per run, so the
+    subject + body get formatted into one block and truncated if needed.
+    Returns the Comment object on success, None on failure.
+    """
+    if not has_notion_token():
+        return None
+    if not page_id:
+        print("post_lead_comment: page_id is required")
+        return None
+    text = f"Subject: {subject}\n\n{body}".strip()
+    if len(text) > 1990:
+        text = text[:1987] + "..."
+    try:
+        return mcp_create_comment(page_id, text)
+    except Exception as e:  # noqa: BLE001
+        print(f"post_lead_comment: mcp_create_comment raised: {e}")
+        return None

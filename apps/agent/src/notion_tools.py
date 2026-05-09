@@ -517,6 +517,110 @@ def insert_notion_lead(
         )
 
 
+@tool
+def post_outreach_comment(
+    leadId: Annotated[str, "Lead id from state.leads — for Notion-backed leads this is the page id."],
+    subject: Annotated[str, "Email subject line, exactly as the user approved it."],
+    body: Annotated[str, "Email body, exactly as the user approved it. Newlines preserved."],
+    tool_call_id: Annotated[str, InjectedToolCallId] = "",
+    state: Annotated[Dict[str, Any], InjectedState] = None,
+) -> Command:
+    """Post an approved outreach email as a comment on the lead's Notion page.
+
+    Call this AFTER the user clicks Approve in the renderEmailDraft review
+    card. The frontend round-trips the user's final subject/body in the
+    follow-up prompt — pass those through here verbatim. Returns a
+    ToolMessage with success or an actionable failure hint. No state
+    update — the comment lives on the Notion page, not in canvas state.
+    """
+    try:
+        from .lead_store import get_store
+
+        store = get_store()
+        leads = (state or {}).get("leads") or []
+        lead = next((l for l in leads if l.get("id") == leadId), None)
+        if lead is None:
+            return Command(
+                update={
+                    "messages": [
+                        ToolMessage(
+                            content=(
+                                f"post_outreach_comment: no lead with id={leadId} "
+                                f"in state.leads. Did you call find_lead first?"
+                            ),
+                            tool_call_id=tool_call_id,
+                        )
+                    ],
+                }
+            )
+
+        if store.is_local():
+            display_name = lead.get("name") or "(unnamed)"
+            return Command(
+                update={
+                    "messages": [
+                        ToolMessage(
+                            content=(
+                                f"post_outreach_comment: local store mode — "
+                                f"comment for {display_name} ({leadId}) was NOT "
+                                "posted. Wire NOTION_TOKEN + share the leads "
+                                "database with the integration to enable Notion "
+                                "comments."
+                            ),
+                            tool_call_id=tool_call_id,
+                        )
+                    ],
+                }
+            )
+
+        from .notion_integration import post_lead_comment
+
+        result = post_lead_comment(leadId, subject, body)
+        if result is None:
+            return Command(
+                update={
+                    "messages": [
+                        ToolMessage(
+                            content=(
+                                f"post_outreach_comment failed for {leadId}. "
+                                "Check NOTION_TOKEN and that the integration "
+                                "has access to this page (Notion comments "
+                                "require 'insert content' capability on the "
+                                "shared database)."
+                            ),
+                            tool_call_id=tool_call_id,
+                        )
+                    ],
+                }
+            )
+
+        display_name = lead.get("name") or "(unnamed)"
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(
+                        content=(
+                            f"Posted outreach comment to {display_name}'s Notion "
+                            f"page ({leadId})."
+                        ),
+                        tool_call_id=tool_call_id,
+                    )
+                ],
+            }
+        )
+    except Exception as e:  # noqa: BLE001 - surface error text to the LLM
+        return Command(
+            update={
+                "messages": [
+                    ToolMessage(
+                        content=f"post_outreach_comment raised: {e}",
+                        tool_call_id=tool_call_id,
+                    )
+                ],
+            }
+        )
+
+
 def load_notion_tools() -> List[Any]:
     """Return the Notion-flavored backend tool list for the agent.
 
@@ -527,6 +631,7 @@ def load_notion_tools() -> List[Any]:
     - `notion_health_check`
     - `update_notion_lead`        (phase 04 — Command(update=) write-back)
     - `insert_notion_lead`        (phase 04 — Command(update=) write-back)
+    - `post_outreach_comment`     (HITL email approval → Notion comment)
 
     The Notion MCP server is spawned per-call inside `notion_mcp.py`, so
     no setup happens here — the only env this function depends on is
@@ -539,6 +644,7 @@ def load_notion_tools() -> List[Any]:
         notion_health_check,
         update_notion_lead,
         insert_notion_lead,
+        post_outreach_comment,
     ]
     print(f"Backend tools loaded: {len(tools)} tools")
     return tools

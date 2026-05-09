@@ -3,6 +3,8 @@
 import type { Lead } from "@/lib/leads/types";
 import { optInRate, topWorkshop, toolUsage, workshopClass } from "@/lib/leads/derive";
 import { useCountUp } from "@/lib/leads/hooks";
+import { StatusDonut } from "./charts/StatusDonut";
+import { WorkshopSpread } from "./charts/WorkshopSpread";
 
 interface MetricsRowProps {
   leads: Lead[];
@@ -15,30 +17,46 @@ export function MetricsRow({ leads }: MetricsRowProps) {
   const topTool = tools[0]?.label ?? "—";
   const topToolCount = tools[0]?.count ?? 0;
 
-  const total = useCountUp(leads.length);
   const optPct = useCountUp(opt.pct);
   const optYes = useCountUp(opt.yes);
   const topToolCountAnim = useCountUp(topToolCount);
 
   return (
     <div className="grid grid-cols-2 gap-3 pb-4 md:grid-cols-4">
-      <Metric label="Total leads" value={total.toString()} />
+      <div className="rounded-xl border border-border bg-card p-3">
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          Pipeline
+        </div>
+        <div className="mt-2">
+          <StatusDonut leads={leads} />
+        </div>
+      </div>
       <Metric
         label="Opt-in rate"
         value={`${optPct}%`}
-        sub={`${optYes} of ${total}`}
+        sub={`${optYes} of ${leads.length}`}
         accent="bg-emerald-500"
         accentWidth={`${optPct}%`}
       />
-      <Metric
-        label="Top workshop demand"
-        value={top ?? "—"}
-        valueClass={
-          top
-            ? `inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${workshopClass(top)}`
-            : ""
-        }
-      />
+      <div className="rounded-xl border border-border bg-card p-3">
+        <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          Top workshop demand
+        </div>
+        <div className="mt-1 truncate">
+          {top ? (
+            <span
+              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${workshopClass(top)}`}
+            >
+              {top}
+            </span>
+          ) : (
+            <span className="text-lg font-semibold text-foreground">—</span>
+          )}
+        </div>
+        <div className="mt-2">
+          <WorkshopSpread leads={leads} />
+        </div>
+      </div>
       <Metric
         label="Most-used tool"
         value={topTool}
