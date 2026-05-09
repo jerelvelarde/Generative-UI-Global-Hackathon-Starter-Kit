@@ -33,7 +33,7 @@ from src.prompts import build_system_prompt
 from src.runtime import build_graph
 
 
-# Load .env early so GEMINI_API_KEY / NOTION_TOKEN / ANTHROPIC_API_KEY are visible.
+# Load .env early so GEMINI_API_KEYS / NOTION_TOKEN / ANTHROPIC_API_KEY are visible.
 load_dotenv()
 
 
