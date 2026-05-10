@@ -63,6 +63,9 @@ npm install
 npm run dev          # boots Docker infra, then UI + BFF + agent
 # or
 npm run dev:full     # adds the optional MCP server
+# or
+npm run dev:lowmem   # polling watchers + webpack UI; for Linux boxes hitting
+                     # the inotify limit (no sudo). See "Common gotchas".
 ```
 
 Open **http://localhost:3010**. Stop with `ctrl+C`, then:
@@ -93,6 +96,11 @@ Reports PASS/FAIL per service with actionable hints. If it's all green, your env
 
 | Symptom                                                                  | Cause                                          | Fix                                                              |
 | ------------------------------------------------------------------------ | ---------------------------------------------- | ---------------------------------------------------------------- |
+| `npm run dev` says `concurrently: not found` (exit 127)                  | Root `node_modules` never installed            | `npm install` in repo root (postinstall also `uv sync`s the agent) |
+| Intelligence container restart-loops with `database "intelligence_app" does not exist` | Stale Postgres volume from a prior run skipped initdb scripts | `docker compose --project-directory . -f deployment/docker-compose.yml down -v` then `npm run dev:infra`. Volume wipe is project-scoped, doesn't touch other Docker projects. |
+| Linux: BFF crashes with `ENOSPC: System limit for number of file watchers reached` | inotify watch limit too low (default 65K)     | If you have sudo: `sudo sysctl -w fs.inotify.max_user_watches=524288 fs.inotify.max_user_instances=512`. If not: use `npm run dev:lowmem` (polling + webpack, no inotify) |
+| Linux: Turbopack panics with `OS file watch limit reached`               | Turbopack uses native inotify; ignores polling env vars | Same as above — sudo bump, or run `npm run dev:lowmem` which switches the UI to webpack mode |
+| Active Node version doesn't match `.nvmrc`                               | Forgot to run `nvm use`                        | `nvm use` in repo root (or `nvm install 20 && nvm use 20`)        |
 | Chat fails with vague auth error                                         | `GEMINI_API_KEYS` is still the stub value      | Paste real key from team chat into **both** `.env` files         |
 | Agent boots but tools never respond                                      | `apps/agent/.env` not copied                   | `cp .env apps/agent/.env` and restart `npm run dev`              |
 | `predev` complains about Notion                                          | `NOTION_TOKEN` is set to a real value          | Either fill in `NOTION_LEADS_DATABASE_ID` or **clear** `NOTION_TOKEN` (we're on Hearth, leave blank) |

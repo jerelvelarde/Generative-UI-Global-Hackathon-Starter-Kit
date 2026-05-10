@@ -12,6 +12,7 @@ yarn.lock
 bun.lockb
 .env
 .env.local
+apps/agent/.env
 postgres-data
 redis-data
 .DS_Store
