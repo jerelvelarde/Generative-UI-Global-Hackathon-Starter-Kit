@@ -34,6 +34,7 @@ import { useEffect, useRef } from "react";
 
 import { useHearthStore } from "@/lib/hearth/store";
 import type { Lever, MoodProfile } from "@/lib/hearth/schema";
+import { recordTrace } from "@/lib/hearth/trace";
 
 import { triggerRegen } from "./regenerate";
 
@@ -152,9 +153,21 @@ export function useOutOfBoundsDetector(): void {
             if (process.env.NODE_ENV !== "production") {
               console.log("[hearth] F-08 fire:", finalReason);
             }
+            recordTrace({
+              kind: "lever.out_of_bounds.fire",
+              label: `Out-of-bounds: ${lever.label}`,
+              detail: finalReason,
+            });
             triggerRegen(finalReason);
-          } else if (process.env.NODE_ENV !== "production") {
-            console.log("[hearth] F-08 cancelled (snap-back):", armedReason);
+          } else {
+            recordTrace({
+              kind: "lever.out_of_bounds.cancel",
+              label: `Snap back: ${lever.label}`,
+              detail: armedReason,
+            });
+            if (process.env.NODE_ENV !== "production") {
+              console.log("[hearth] F-08 cancelled (snap-back):", armedReason);
+            }
           }
         }, OUT_OF_BOUNDS_HOLD_MS);
       }

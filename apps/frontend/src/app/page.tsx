@@ -22,12 +22,15 @@
 import { useCallback, useState } from "react";
 import {
   CopilotChatConfigurationProvider,
-  CopilotSidebar,
   useAgent,
   useCopilotKit,
 } from "@copilotkit/react-core/v2";
 
 import { HearthFrontendTools } from "@/components/copilot/hearth-tools";
+import { HearthChatPanel } from "@/components/hearth/chat/HearthChatPanel";
+import { GoalPill } from "@/components/hearth/goal-pill/GoalPill";
+import { TracePanel } from "@/components/hearth/trace/TracePanel";
+import { useIdle } from "@/lib/hearth/idle";
 import { useHearthStore } from "@/lib/hearth/store";
 
 function HearthInner() {
@@ -35,6 +38,7 @@ function HearthInner() {
   const { copilotkit } = useCopilotKit();
   const goal = useHearthStore((s) => s.profile.goal);
   const [draft, setDraft] = useState("");
+  const idle = useIdle();
 
   const submitGoal = useCallback(
     (text: string) => {
@@ -56,15 +60,26 @@ function HearthInner() {
   return (
     <>
       <HearthFrontendTools />
+      <GoalPill dimmed={idle} />
+      <TracePanel dimmed={idle} />
+
       <main className="min-h-screen flex flex-col items-center justify-center gap-8 p-12 bg-stone-950 text-stone-100">
-        <div className="flex flex-col items-center gap-2">
+        <div
+          className={`flex flex-col items-center gap-2 transition-opacity duration-700 ${
+            idle ? "opacity-30" : "opacity-100"
+          }`}
+        >
           <h1 className="text-4xl font-semibold tracking-tight">Hearth</h1>
           <p className="text-xs uppercase tracking-widest text-stone-500">
             agent-generated room
           </p>
         </div>
 
-        <div className="w-full max-w-md flex flex-col gap-2">
+        <div
+          className={`w-full max-w-md flex flex-col gap-2 transition-opacity duration-700 ${
+            idle ? "opacity-30" : "opacity-100"
+          }`}
+        >
           <label className="text-xs uppercase tracking-widest text-stone-500">
             current goal
           </label>
@@ -73,7 +88,11 @@ function HearthInner() {
           </p>
         </div>
 
-        <div className="w-full max-w-md flex flex-col gap-3">
+        <div
+          className={`w-full max-w-md flex flex-col gap-3 transition-opacity duration-700 ${
+            idle ? "opacity-30" : "opacity-100"
+          }`}
+        >
           <textarea
             className="bg-stone-900 border border-stone-800 rounded-md p-3 text-sm font-mono focus:outline-none focus:border-amber-500"
             rows={3}
@@ -95,11 +114,7 @@ function HearthInner() {
         </div>
       </main>
 
-      <CopilotSidebar
-        defaultOpen
-        width={420}
-        input={{ disclaimer: () => null, className: "pb-6" }}
-      />
+      <HearthChatPanel dimmed={idle} />
     </>
   );
 }

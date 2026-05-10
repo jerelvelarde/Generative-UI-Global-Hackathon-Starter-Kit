@@ -33,6 +33,7 @@ import { useHearthStore } from "@/lib/hearth/store";
 import { Lever, MoodProfile, SceneId } from "@/lib/hearth/schema";
 import { useOutOfBoundsDetector } from "@/lib/hearth/genui/outOfBounds";
 import { useRegenWiring } from "@/lib/hearth/genui/regenerate";
+import { recordTrace } from "@/lib/hearth/trace";
 
 /**
  * Convert an agent-friendly leverId into the dot-path the store mutates.
@@ -66,10 +67,17 @@ function useAgentProfileBridge() {
     const parsed = MoodProfile.safeParse(agentProfile);
     if (parsed.success) {
       applyProfile(parsed.data);
+      recordTrace({
+        kind: "agent.profile.applied",
+        label: "Mood Architect → MoodProfile",
+        detail: `${parsed.data.goal.kind} · ${parsed.data.levers.length} levers · scene ${parsed.data.visual.sceneId}`,
+      });
     } else if (process.env.NODE_ENV !== "production") {
       console.warn(
         "[hearth] agent.state.profile failed validation",
-        parsed.error.issues,
+        JSON.stringify(parsed.error.issues, null, 2),
+        "RECEIVED:",
+        JSON.stringify(agentProfile, null, 2),
       );
     }
   }, [agentProfile, applyProfile]);
@@ -96,6 +104,11 @@ export function HearthFrontendTools() {
       const path = resolveLeverPath(leverId);
       if (!path) return `unknown lever id: ${leverId}`;
       setLeverValue(path, value);
+      recordTrace({
+        kind: "tool.updateLeverValue",
+        label: `Tool: updateLeverValue`,
+        detail: `${leverId} → ${value}`,
+      });
       return `set ${leverId} (${path}) -> ${value}`;
     },
   });
@@ -107,6 +120,11 @@ export function HearthFrontendTools() {
     parameters: z.object({ lever: Lever }),
     handler: async ({ lever }) => {
       addLever(lever);
+      recordTrace({
+        kind: "tool.addLever",
+        label: `Tool: addLever`,
+        detail: `${lever.label} (${lever.id}) → ${lever.bindTo}`,
+      });
       return `added lever ${lever.id} bound to ${lever.bindTo}`;
     },
   });
@@ -118,6 +136,11 @@ export function HearthFrontendTools() {
     parameters: z.object({ sceneId: SceneId }),
     handler: async ({ sceneId }) => {
       swapScene(sceneId);
+      recordTrace({
+        kind: "tool.swapScene",
+        label: `Tool: swapScene`,
+        detail: `scene → ${sceneId}`,
+      });
       return `scene -> ${sceneId}`;
     },
   });
@@ -134,6 +157,11 @@ export function HearthFrontendTools() {
       if (process.env.NODE_ENV !== "production") {
         console.log("[hearth] regen signal:", reason);
       }
+      recordTrace({
+        kind: "tool.regenerateMoodProfile",
+        label: "Tool: regenerateMoodProfile",
+        detail: reason,
+      });
       return `regen signal received: ${reason}`;
     },
   });

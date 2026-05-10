@@ -31,6 +31,8 @@
 import { useEffect } from "react";
 import { useAgent, useCopilotKit } from "@copilotkit/react-core/v2";
 
+import { recordTrace } from "@/lib/hearth/trace";
+
 type Agent = NonNullable<ReturnType<typeof useAgent>["agent"]>;
 type CopilotKit = ReturnType<typeof useCopilotKit>["copilotkit"];
 
@@ -85,6 +87,12 @@ export function triggerRegen(reason: string): void {
     id,
     role: "user",
     content: `Regenerate the room: ${reason}`,
+  });
+
+  recordTrace({
+    kind: "regen.trigger",
+    label: "Regenerate signal sent",
+    detail: reason,
   });
 
   void copilotkit.runAgent({ agent }).catch((err: unknown) => {
