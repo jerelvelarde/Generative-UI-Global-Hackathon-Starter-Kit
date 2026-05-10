@@ -93,9 +93,9 @@ const quickstart = [
     note: "Or sign in at dashboard.operations.copilotkit.ai/sign-in for the manual path. Paste the token into .env as COPILOTKIT_LICENSE_TOKEN.",
   },
   {
-    title: "Add your Gemini key",
-    body: "GEMINI_API_KEY=AIza...",
-    note: "Get a key at aistudio.google.com → Get API key. Drop it in BOTH .env and apps/agent/.env (the agent reads its own dotenv).",
+    title: "Add your Gemini keys",
+    body: "GEMINI_API_KEYS=AIza-primary...,AIza-backup...",
+    note: "Get keys at aistudio.google.com → Get API key. Drop the comma-separated keyring in BOTH .env and apps/agent/.env (the agent reads its own dotenv).",
   },
   {
     title: "Install + run",
@@ -323,8 +323,8 @@ export default function AboutPage() {
         </ol>
         <p className="mt-4 text-sm text-muted-foreground">
           On a fresh clone, <Code>.env.example</Code> ships a placeholder
-          Gemini key; chat fails until you replace it. The agent will print a
-          warning at startup so you don&apos;t miss it.
+          Gemini keyring; chat falls back to a setup pointer until you replace
+          it. The agent will print a warning at startup so you don&apos;t miss it.
         </p>
       </Section>
 
@@ -491,12 +491,12 @@ export default function AboutPage() {
             />
             <div>
               <p className="text-sm font-semibold text-foreground">
-                <Code>GEMINI_API_KEY</Code> &mdash; required
+                <Code>GEMINI_API_KEYS</Code> &mdash; required
               </p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Set in both <Code>.env</Code> and{" "}
-                <Code>apps/agent/.env</Code>. Without it the agent boots but
-                every chat turn fails.
+                Set as a comma-separated primary/backup list in both{" "}
+                <Code>.env</Code> and <Code>apps/agent/.env</Code>. Without it
+                the agent boots with the no-op setup reply.
               </p>
             </div>
           </li>

@@ -48,14 +48,15 @@ This kit defaults to **Gemini 3 Flash Preview**. You need a Gemini API key for c
 
 Full docs: https://ai.google.dev/gemini-api/docs/api-key
 
-Then drop it into both env files:
+Then drop it into both env files. Prefer `GEMINI_API_KEYS` even if you only
+have one key; add a second key after a comma for automatic failover:
 
 ```bash
 # .env (root, used by the BFF + Next.js)
-GEMINI_API_KEY=AIza...
+GEMINI_API_KEYS=AIza-primary...,AIza-backup...
 
 # apps/agent/.env (used by langgraph dev)
-GEMINI_API_KEY=AIza...
+GEMINI_API_KEYS=AIza-primary...,AIza-backup...
 ```
 
 Prefer a different model (OpenAI, Anthropic, Ollama)? See [model-switching.md](model-switching.md).
@@ -116,7 +117,7 @@ A few things the [Run it locally](../README.md#run-it-locally) quickstart elides
 
 - **Docker is implicit.** `npm run dev` calls `npm run dev:infra` first, which runs `docker compose up -d --wait` against `deployment/docker-compose.yml`. That pulls `ghcr.io/copilotkit/intelligence/composite` and brings up Postgres + Redis alongside. If you'd rather bring infra up yourself, run `npm run dev:infra` once and then `npm run dev:ui` / `dev:bff` / `dev:agent` separately.
 - **Intelligence env vars match the compose defaults.** `INTELLIGENCE_API_URL`, `INTELLIGENCE_GATEWAY_WS_URL`, and `INTELLIGENCE_API_KEY` in `.env.example` line up with `deployment/docker-compose.yml` — no manual editing needed for local dev.
-- **License vs Gemini.** Both are required. The license is a one-time fetch (`npx copilotkit@latest license`). The Gemini key has to land in **both** `.env` (BFF + Next.js) and `apps/agent/.env` (agent's own dotenv).
+- **License vs Gemini.** Both are required. The license is a one-time fetch (`npx copilotkit@latest license`). The Gemini keyring has to land in **both** `.env` (BFF + Next.js) and `apps/agent/.env` (agent's own dotenv).
 
 ---
 

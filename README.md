@@ -106,7 +106,7 @@ The kit's `apps/mcp/` package is an MCP server built with [`mcp-use`](https://ma
 
 1. Copy the env templates: `cp .env.example .env && cp apps/agent/.env.example apps/agent/.env`.
 2. Get a CopilotKit Intelligence license — run `npx copilotkit@latest license` (or sign in at [dashboard.operations.copilotkit.ai/sign-in](https://dashboard.operations.copilotkit.ai/sign-in) for the manual path). Paste the token into `.env` as `COPILOTKIT_LICENSE_TOKEN`.
-3. Add a Gemini API key — paste it into **both** `.env` and `apps/agent/.env` (the slot is already in each template from step 1). Then follow [Notion setup](#notion-setup) below for the integration token + database id.
+3. Add Gemini API keys — set `GEMINI_API_KEYS=primary,backup` in **both** `.env` and `apps/agent/.env` (the slot is already in each template from step 1). The agent uses the list in failover order. Then follow [Notion setup](#notion-setup) below for the integration token + database id.
 4. Run `npm install` then `npm run dev` (or `npm run dev:full` to include the MCP server).
 5. Once the `ui`, `bff`, and `agent` streams are running, open **[http://localhost:3010](http://localhost:3010)**.
 
