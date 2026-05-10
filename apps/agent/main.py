@@ -23,8 +23,7 @@ from __future__ import annotations
 
 import os
 
-from dotenv import load_dotenv
-
+from src.env_loader import bootstrap_env
 from src.gemini_keys import get_gemini_api_keys, has_gemini_api_key
 from src.hearth.backend_tools import make_hearth_backend_tools
 from src.intelligence_cleanup import wipe_orphan_threads
@@ -32,8 +31,8 @@ from src.prompts import build_system_prompt
 from src.runtime import build_graph
 
 
-# Load .env early so GEMINI_API_KEYS / NOTION_TOKEN / ANTHROPIC_API_KEY are visible.
-load_dotenv()
+# Load shared root `.env` first, then optional `apps/agent/.env` overrides.
+bootstrap_env()
 
 
 # `langgraph dev` uses an in-memory checkpoint store, so every agent boot
@@ -73,7 +72,7 @@ if _AGENT_RUNTIME.startswith("gemini-") and not _gemini_keys:
         "\n  GEMINI_API_KEYS / GEMINI_API_KEY is unset or a stub.\n"
         "   The agent will boot but chat will fail on the first turn.\n"
         "   Get a key at https://aistudio.google.com → Get API key,\n"
-        "   then set GEMINI_API_KEYS in .env and apps/agent/.env.\n",
+        "   then set GEMINI_API_KEYS in .env (or apps/agent/.env override).\n",
         flush=True,
     )
 elif _AGENT_RUNTIME.startswith("gemini-"):

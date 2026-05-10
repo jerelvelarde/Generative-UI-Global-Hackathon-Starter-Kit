@@ -46,14 +46,15 @@ from collections import Counter
 from datetime import datetime, timezone
 from typing import Annotated, Any, Dict, List
 
-from dotenv import load_dotenv
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool, InjectedToolCallId
 from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
 
-# Load environment variables early to support local development via .env
-load_dotenv()
+from .env_loader import bootstrap_env
+
+# Load root `.env` plus optional `apps/agent/.env` overrides.
+bootstrap_env()
 
 
 @tool

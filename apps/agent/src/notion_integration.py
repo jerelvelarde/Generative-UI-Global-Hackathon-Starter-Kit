@@ -30,8 +30,7 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, List, Optional, TypedDict
 
-from dotenv import load_dotenv
-
+from .env_loader import bootstrap_env
 from .notion_mcp import (
     has_notion_token,
     mcp_create_page,
@@ -41,12 +40,9 @@ from .notion_mcp import (
     mcp_update_page,
 )
 
-# Load `agent/.env` here too so standalone callers (e.g.
-# `uv run python -c "from src.notion_integration import health_check; print(health_check())"`)
-# pick up NOTION_TOKEN / NOTION_LEADS_DATABASE_ID without having to call
-# load_dotenv() themselves. Cheap when env is already loaded by main.py /
-# notion_tools.py.
-load_dotenv()
+# Load root `.env` plus optional `apps/agent/.env` overrides so standalone
+# callers can resolve credentials without extra setup steps.
+bootstrap_env()
 
 
 # Notion property names the `_read_*` accessors below expect to find. Used
